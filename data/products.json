@@ -1,0 +1,43 @@
+[
+  {
+    "id": "starter-kael-01",
+    "title": "Стартовый аккаунт с Каэлем",
+    "category": "starter",
+    "description": "Чистый старт, готовый к привязке. Отличная база для быстрого прохождения кампании.",
+    "image": "/images/product-placeholder.svg",
+    "gallery": [],
+    "priceRub": 990,
+    "priceStars": 790,
+    "available": true,
+    "featured": true,
+    "tags": ["Каэль", "Новый аккаунт", "Быстрый старт"],
+    "stats": { "Уровень": 1, "Легендарные герои": 0, "Регион": "Global" }
+  },
+  {
+    "id": "upgraded-arbiter-01",
+    "title": "Прокачанный аккаунт с Арбитром",
+    "category": "upgraded",
+    "description": "Аккаунт для поздней игры с собранными командами и большим запасом ресурсов.",
+    "image": "/images/product-placeholder.svg",
+    "gallery": [],
+    "priceRub": 24900,
+    "priceStars": 19900,
+    "available": true,
+    "featured": true,
+    "tags": ["Арбитр", "Эндгейм", "Арена"],
+    "stats": { "Уровень": 100, "Легендарные герои": 42, "Сила": "12.8M" }
+  },
+  {
+    "id": "donate-pack-01",
+    "title": "Пополнение игрового баланса",
+    "category": "donate",
+    "description": "Заявка на пополнение. Менеджер уточнит сервер и необходимый пакет после заказа.",
+    "image": "/images/product-placeholder.svg",
+    "gallery": [],
+    "priceRub": 1500,
+    "priceStars": 1200,
+    "available": true,
+    "tags": ["Донат", "Быстро"],
+    "stats": { "Срок": "до 30 минут" }
+  }
+]

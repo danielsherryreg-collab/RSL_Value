@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#20283a"/><stop offset="1" stop-color="#080b12"/></linearGradient></defs>
+  <rect width="800" height="600" fill="url(#g)"/><path d="M400 96l78 125 145 35-94 112 12 149-141-55-141 55 12-149-94-112 145-35z" fill="#f6c453" opacity=".85"/><text x="400" y="555" fill="#fff" font-family="Arial" font-size="48" font-weight="700" text-anchor="middle">RAID STORE</text>
+</svg>
