@@ -41,6 +41,7 @@ export interface AuctionListing {
   id: string;
   sellerTelegramUserId: number;
   sellerUsername?: string;
+  sellerDisplayName?: string;
   title: string;
   description: string;
   images: string[];
@@ -56,6 +57,7 @@ export interface StoreOffer {
   id: string;
   sellerTelegramUserId: number;
   sellerUsername?: string;
+  sellerDisplayName?: string;
   title: string;
   description: string;
   images: string[];
@@ -69,4 +71,9 @@ export interface StoreOffer {
   acceptedByTelegramUserId?: number;
   acceptedByUsername?: string;
   moderationFlags?: string[];
+  accountData?: {
+    level:number; power:number; legendaries:number; mythicals:number; voidLegendaries:number; sixStar:number;
+    greatHall:number; factionWars:number; clanBoss:string; hydra:string; arena:string; gems:number; energy:number;
+    silver:number; sacred:number; voidShards:number; legendaryBooks:number; champions:string[];
+  };
 }

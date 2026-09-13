@@ -22,7 +22,7 @@ const toDataUrl = async (url: string) => new Promise<string>((resolve, reject) =
   image.src = url;
 });
 
-export default function OfferMarket({ screens, estimateRub, mode = 'all' }: { screens: Screen[]; estimateRub: number; mode?: 'all' | 'sell' | 'buy' }) {
+export default function OfferMarket({ screens, estimateRub, accountData, mode = 'all' }: { screens: Screen[]; estimateRub: number; accountData?: NonNullable<StoreOffer['accountData']>; mode?: 'all' | 'sell' | 'buy' }) {
   const [draft] = useState(loadOfferDraft);
   const [offers, setOffers] = useState<StoreOffer[]>([]);
   const [pending, setPending] = useState<StoreOffer[]>([]);
@@ -61,7 +61,7 @@ export default function OfferMarket({ screens, estimateRub, mode = 'all' }: { sc
       const images = await Promise.all(screens.map(screen => toDataUrl(screen.url)));
       const item = await api.createOffer({
         title, description, images,
-        offerPriceRub: Number(price), estimatedPriceRub: Math.round(estimateRub)
+        offerPriceRub: Number(price), estimatedPriceRub: Math.round(estimateRub), accountData: accountData!
       });
       setCreated(item);
     } catch (error) {
