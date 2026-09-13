@@ -16,6 +16,7 @@ const combos=[
   {ids:['gnut','kymar'] as ChampionId[],name:'Гнут + Каймер',bonus:7000,detail:'Быстрый фарм боссов и подземелий.'}
 ];
 const initial:FormState={power:0,level:0,legendaries:0,mythicals:0,voidLegendaries:0,sixStar:0,greatHall:0,factionWars:0,clanBoss:'normal',arena:'bronze',gems:0,sacred:0,voidShards:0,legendaryBooks:0,champions:[]};
+const loadForm=():FormState=>{try{return{...initial,...JSON.parse(localStorage.getItem('rsl-value-form-draft')||'{}')}}catch{return initial}};
 const fmt=(n:number)=>new Intl.NumberFormat('ru-RU').format(Math.round(n));
 
 function estimate(f:FormState){
@@ -67,7 +68,8 @@ function Calculator({form,setForm}:{form:FormState;setForm:React.Dispatch<React.
 
 export default function App(){
   const[view,setView]=useState<View>(()=>location.hash==='#estimate'?'estimate':location.hash==='#market'?'market':'home');
-  const[form,setForm]=useState(initial);const[screens,setScreens]=useState<Screen[]>([]);const result=useMemo(()=>estimate(form),[form]);
+  const[form,setForm]=useState<FormState>(loadForm);const[screens,setScreens]=useState<Screen[]>([]);const result=useMemo(()=>estimate(form),[form]);
+  useEffect(()=>{localStorage.setItem('rsl-value-form-draft',JSON.stringify(form))},[form]);
   useEffect(()=>{const change=()=>{setView(location.hash==='#estimate'?'estimate':location.hash==='#market'?'market':'home');window.scrollTo({top:0})};addEventListener('hashchange',change);return()=>removeEventListener('hashchange',change)},[]);
   const applyAnalysis=useCallback((data:AutoFillData)=>setForm(current=>({...current,level:data.level,power:data.power,legendaries:data.legendaries,mythicals:data.mythicals,voidLegendaries:data.voidLegendaries,sixStar:data.sixStar,greatHall:data.greatHall,factionWars:data.factionWars,gems:data.gems,sacred:data.sacred,voidShards:data.voidShards,legendaryBooks:data.legendaryBooks,champions:data.champions.filter((id):id is ChampionId=>champions.some(champion=>champion.id===id))})),[]);
   const syncScreens=useCallback((next:Screen[])=>setScreens(next),[]);

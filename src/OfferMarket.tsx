@@ -4,6 +4,7 @@ import { api } from './api';
 
 type Screen = { url: string; name: string };
 const fmt = (value: number) => new Intl.NumberFormat('ru-RU').format(Math.round(value));
+const loadOfferDraft=()=>{try{return JSON.parse(localStorage.getItem('rsl-value-offer-draft')||'{}') as {title?:string;description?:string;price?:string}}catch{return{}}};
 const toDataUrl = async (url: string) => new Promise<string>((resolve, reject) => {
   const image = new Image();
   image.onload = () => {
@@ -22,14 +23,15 @@ const toDataUrl = async (url: string) => new Promise<string>((resolve, reject) =
 });
 
 export default function OfferMarket({ screens, estimateRub, mode = 'all' }: { screens: Screen[]; estimateRub: number; mode?: 'all' | 'sell' | 'buy' }) {
+  const [draft] = useState(loadOfferDraft);
   const [offers, setOffers] = useState<StoreOffer[]>([]);
   const [pending, setPending] = useState<StoreOffer[]>([]);
   const [incoming, setIncoming] = useState<StoreOffer>();
   const [created, setCreated] = useState<StoreOffer>();
   const [isAdmin, setIsAdmin] = useState(false);
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [price, setPrice] = useState('');
+  const [title, setTitle] = useState(draft.title || '');
+  const [description, setDescription] = useState(draft.description || '');
+  const [price, setPrice] = useState(draft.price || '');
   const [commissions, setCommissions] = useState<Record<string, string>>({});
   const [busyId, setBusyId] = useState('');
   const [error, setError] = useState('');
@@ -48,7 +50,8 @@ export default function OfferMarket({ screens, estimateRub, mode = 'all' }: { sc
     if (param.startsWith('offer_')) api.offer(param).then(setIncoming).catch(() => undefined);
   }, []);
 
-  useEffect(() => setPrice(String(Math.round(estimateRub))), [estimateRub]);
+  useEffect(() => setPrice(current => current || String(Math.round(estimateRub))), [estimateRub]);
+  useEffect(() => { if(mode === 'sell') localStorage.setItem('rsl-value-offer-draft', JSON.stringify({title,description,price})) }, [mode,title,description,price]);
 
   const publish = async () => {
     if (!screens.length) return setError('Сначала загрузите хотя бы один скриншот');
