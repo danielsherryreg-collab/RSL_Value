@@ -52,6 +52,7 @@ export default function OfferMarket({ screens, estimateRub, mode = 'all' }: { sc
 
   useEffect(() => setPrice(current => current || String(Math.round(estimateRub))), [estimateRub]);
   useEffect(() => { if(mode === 'sell') localStorage.setItem('rsl-value-offer-draft', JSON.stringify({title,description,price})) }, [mode,title,description,price]);
+  useEffect(() => { const fill=(event:Event)=>{const detail=(event as CustomEvent<{title:string;description:string}>).detail;if(detail){setTitle(detail.title);setDescription(detail.description)}};window.addEventListener('rsl-generate-offer',fill);return()=>window.removeEventListener('rsl-generate-offer',fill) }, []);
 
   const publish = async () => {
     if (!screens.length) return setError('Сначала загрузите хотя бы один скриншот');

@@ -4,7 +4,7 @@ import { api } from './api';
 export type Screen = { url: string; name: string; slotId: string };
 export type AutoFillData = {
   level: number; power: number; legendaries: number; mythicals: number; voidLegendaries: number;
-  sixStar: number; greatHall: number; factionWars: number; gems: number; sacred: number;
+  sixStar: number; greatHall: number; factionWars: number; gems: number; energy: number; silver: number; sacred: number;
   voidShards: number; legendaryBooks: number; champions: string[]; confidence: number;
   marketReferenceRub: number; purchaseEstimateRub: number;
   progress: Record<string, string | number | boolean>; notes: string[];
