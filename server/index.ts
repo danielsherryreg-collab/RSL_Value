@@ -69,7 +69,7 @@ app.post('/api/telegram/webhook', async (req,res) => {
   const mainMenu=(userId:number)=>({inline_keyboard:[
     [{text:'📋 Мои офферы',callback_data:'menu:my_offers'},{text:'🛒 Магазин',web_app:{url:`${appUrl}/#market`}}],
     [{text:'➕ Создать оффер',web_app:{url:`${appUrl}/#estimate`}}],
-    ...(adminIds().includes(userId)?[[{text:'🛡 Офферы на проверке',callback_data:'admin:offers'},{text:'📦 Управление заказами',callback_data:'admin:orders'}]]:[])
+    ...(adminIds().includes(userId)?[[{text:'🛡 Офферы на проверке',callback_data:'admin:offers'},{text:'📦 Управление заказами',callback_data:'admin:orders'}],[{text:'🗑 Управление аккаунтами',callback_data:'admin:accounts'}]]:[])
   ]});
   if (message?.text && /^\/(?:start|menu)(?:@rsl_value_bot)?(?:\s|$)/i.test(message.text) && appUrl) {
     await sendMessage(message.chat.id, adminIds().includes(message.from.id)?'Панель RSL Value. Вам доступны функции администратора.':'Добро пожаловать в RSL Value! Здесь можно проверить статус оффера, оценить аккаунт или открыть магазин.', mainMenu(message.from.id));
@@ -92,6 +92,15 @@ app.post('/api/telegram/webhook', async (req,res) => {
     else if(data==='admin:offers'){
       if(!isAdmin)await sendMessage(chatId,'Доступ только для администратора.');
       else{const items=(await getOffers()).filter(x=>x.status==='pending').slice(-10).reverse();const rows=items.length?[[{text:'Открыть очередь и принять',web_app:{url:`${appUrl}/#market`}}]]:[];await sendMessage(chatId,items.length?`Офферов на проверке: ${items.length}\n\n${items.map(x=>`• ${x.title} — ${x.offerPriceRub.toLocaleString('ru-RU')} ₽`).join('\n')}`:'Новых офферов на проверке нет.',{inline_keyboard:[...rows,[{text:'← Главное меню',callback_data:'menu:home'}]]});}
+    }else if(data==='admin:accounts'){
+      if(!isAdmin)await sendMessage(chatId,'Доступ только для администратора.');
+      else{const items=(await getOffers()).filter(x=>x.status==='active').sort((a,b)=>b.createdAt.localeCompare(a.createdAt)).slice(0,20);const rows=items.map(item=>[{text:`🗑 ${item.title} · ${(item.retailPriceRub||item.offerPriceRub).toLocaleString('ru-RU')} ₽`,callback_data:`admin:delete_offer:${item.id}`}]);await sendMessage(chatId,items.length?'Опубликованные аккаунты. Выберите аккаунт, который нужно удалить из магазина:':'В магазине пока нет опубликованных аккаунтов.',{inline_keyboard:[...rows,[{text:'🔄 Обновить список',callback_data:'admin:accounts'}],[{text:'← Главное меню',callback_data:'menu:home'}]]});}
+    }else if(data.startsWith('admin:delete_offer:')){
+      if(!isAdmin)await sendMessage(chatId,'Доступ только для администратора.');
+      else{const offerId=data.slice('admin:delete_offer:'.length);const item=(await getOffers()).find(x=>x.id===offerId&&x.status==='active');if(!item)await sendMessage(chatId,'Аккаунт уже удалён или не найден.',{inline_keyboard:[[{text:'← К аккаунтам',callback_data:'admin:accounts'}]]});else await sendMessage(chatId,`Удалить аккаунт из магазина?\n\n${item.title}\nЦена: ${(item.retailPriceRub||item.offerPriceRub).toLocaleString('ru-RU')} ₽\n\nЭто действие нельзя отменить.`,{inline_keyboard:[[{text:'✅ Да, удалить',callback_data:`admin:confirm_delete:${item.id}`}],[{text:'Отмена',callback_data:'admin:accounts'}]]});}
+    }else if(data.startsWith('admin:confirm_delete:')){
+      if(!isAdmin)await sendMessage(chatId,'Доступ только для администратора.');
+      else{const offerId=data.slice('admin:confirm_delete:'.length);const items=await getOffers();const item=items.find(x=>x.id===offerId&&x.status==='active');if(!item)await sendMessage(chatId,'Аккаунт уже удалён или не найден.',{inline_keyboard:[[{text:'← К аккаунтам',callback_data:'admin:accounts'}]]});else{await saveOffers(items.filter(x=>x.id!==offerId));await sendMessage(item.sellerTelegramUserId,`Аккаунт «${item.title}» снят с публикации администратором.`).catch(()=>undefined);await sendMessage(chatId,`Аккаунт «${item.title}» удалён из магазина.`,{inline_keyboard:[[{text:'← К аккаунтам',callback_data:'admin:accounts'}],[{text:'← Главное меню',callback_data:'menu:home'}]]});}}
     }else if(data==='admin:orders'){
       if(!isAdmin)await sendMessage(chatId,'Доступ только для администратора.');
       else{const orders=(await getOrders()).filter(x=>!['completed','cancelled','refunded'].includes(x.status)).slice(-8).reverse();const rows=orders.flatMap(order=>[[{text:`${order.id} · ${order.status} · ${order.amountStars} ⭐`,callback_data:`admin:order:${order.id}`}]]);await sendMessage(chatId,orders.length?'Активные заказы. Нажмите на заказ для управления:':'Активных заказов нет.',{inline_keyboard:[...rows,[{text:'← Главное меню',callback_data:'menu:home'}]]});}
