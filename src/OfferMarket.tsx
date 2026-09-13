@@ -5,10 +5,9 @@ import { api } from './api';
 type Screen = { url: string; name: string };
 const fmt = (value: number) => new Intl.NumberFormat('ru-RU').format(Math.round(value));
 const loadOfferDraft=()=>{try{return JSON.parse(localStorage.getItem('rsl-value-offer-draft')||'{}') as {title?:string;description?:string;price?:string}}catch{return{}}};
-const toDataUrl = async (url: string) => new Promise<string>((resolve, reject) => {
+const toDataUrl = async (url: string, maxSide = 1000, quality = .58) => new Promise<string>((resolve, reject) => {
   const image = new Image();
   image.onload = () => {
-    const maxSide = 1600;
     const scale = Math.min(1, maxSide / Math.max(image.naturalWidth, image.naturalHeight));
     const canvas = document.createElement('canvas');
     canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
@@ -16,7 +15,7 @@ const toDataUrl = async (url: string) => new Promise<string>((resolve, reject) =
     const context = canvas.getContext('2d');
     if (!context) return reject(new Error('Не удалось обработать изображение'));
     context.drawImage(image, 0, 0, canvas.width, canvas.height);
-    resolve(canvas.toDataURL('image/jpeg', .78));
+    resolve(canvas.toDataURL('image/jpeg', quality));
   };
   image.onerror = () => reject(new Error('Не удалось прочитать скриншот'));
   image.src = url;
@@ -58,7 +57,10 @@ export default function OfferMarket({ screens, estimateRub, accountData, mode = 
     if (screens.length < 10) return setError(`Для проверки нужно минимум 10 скриншотов. Сейчас загружено: ${screens.length}`);
     setBusyId('create'); setError('');
     try {
-      const images = await Promise.all(screens.map(screen => toDataUrl(screen.url)));
+      let images = await Promise.all(screens.map(screen => toDataUrl(screen.url)));
+      const encodedBytes = () => images.reduce((sum, image) => sum + Math.ceil((image.length - image.indexOf(',') - 1) * .75), 0);
+      if (encodedBytes() > 8_000_000) images = await Promise.all(screens.map(screen => toDataUrl(screen.url, 760, .46)));
+      if (encodedBytes() > 8_000_000) throw new Error('Комплект скриншотов превышает 8 МБ даже после сжатия. Удалите несколько повторяющихся изображений.');
       const item = await api.createOffer({
         title, description, images,
         offerPriceRub: Number(price), estimatedPriceRub: Math.round(estimateRub), accountData: accountData!
@@ -66,9 +68,7 @@ export default function OfferMarket({ screens, estimateRub, accountData, mode = 
       setCreated(item);
     } catch (error) {
       const message = error instanceof Error ? error.message : '';
-      setError(message === 'Failed to fetch' || message === 'Load failed'
-        ? 'Не удалось связаться с сервером. Закройте Mini App, откройте его через /start и повторите отправку.'
-        : message || 'Не удалось создать оффер');
+      setError(message || 'Не удалось создать оффер');
     } finally { setBusyId(''); }
   };
 

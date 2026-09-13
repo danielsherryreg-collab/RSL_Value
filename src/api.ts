@@ -4,16 +4,25 @@ import type { AutoFillData } from './ScreenshotAnalyzer';
 const initData = () => window.Telegram?.WebApp.initData || '';
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(`/api${path}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Telegram-Init-Data': initData(),
-      ...options?.headers
+  try {
+    const response = await fetch(`/api${path}`, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Telegram-Init-Data': initData(),
+        ...options?.headers
+      }
+    });
+    if (!response.ok) {
+      const message = (await response.json().catch(() => null))?.error;
+      if (response.status === 413) throw new Error('Скриншоты весят слишком много. Уменьшите их количество или выберите изображения меньшего размера.');
+      throw new Error(message || `Ошибка сервера (${response.status})`);
     }
-  });
-  if (!response.ok) throw new Error((await response.json().catch(() => null))?.error || 'Ошибка запроса');
-  return response.json() as Promise<T>;
+    return response.json() as Promise<T>;
+  } catch (error) {
+    if (error instanceof Error && error.message !== 'Failed to fetch' && error.message !== 'Load failed') throw error;
+    throw new Error('Сервер недоступен или комплект скриншотов слишком большой. Проверьте интернет и повторите отправку.');
+  }
 }
 
 export const api = {

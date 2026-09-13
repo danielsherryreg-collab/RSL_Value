@@ -19,7 +19,7 @@ export function validateInitData(raw: string, botToken: string, maxAgeSeconds = 
 
 export const telegramAuth: RequestHandler = (req, res, next) => {
   const raw = String(req.header('X-Telegram-Init-Data') || '');
-  const token = process.env.BOT_TOKEN || '';
+  const token = process.env.RSL_VALUE_BOT_TOKEN || process.env.BOT_TOKEN || '';
   const user = token && raw ? validateInitData(raw, token) : null;
   if (user) { req.telegramUser = user; return next(); }
   if (process.env.ALLOW_DEV_AUTH === 'true' && process.env.NODE_ENV !== 'production') {

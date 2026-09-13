@@ -12,7 +12,7 @@ import { getAuctions, getOffers, getOrders, getProducts, saveAuctions, saveOffer
 import { answerCallback, answerPreCheckout, createStarsInvoice, sendImageAlbums, sendMessage } from './telegram.js';
 
 const app = express(); const port = Number(process.env.PORT || 3001);
-app.use(cors()); app.use(express.json({ limit: '20mb' }));
+app.use(cors()); app.use(express.json({ limit: '12mb' }));
 const publicAppUrl=()=>process.env.PUBLIC_APP_URL||(process.env.RAILWAY_PUBLIC_DOMAIN?`https://${process.env.RAILWAY_PUBLIC_DOMAIN}`:undefined);
 const adminIds=()=>String(process.env.ADMIN_TELEGRAM_IDS||'').split(',').map(x=>Number(x.trim())).filter(Number.isFinite);
 const requireAdmin:express.RequestHandler=(req,res,next)=>adminIds().includes(req.telegramUser!.id)?next():res.status(403).json({error:'Доступ только для администратора'});
@@ -60,7 +60,7 @@ app.post('/api/orders', telegramAuth, async (req,res) => {
   const order:Order = { id:`ord_${Date.now()}_${crypto.randomBytes(3).toString('hex')}`, telegramUserId:req.telegramUser!.id, username:req.telegramUser!.username, lines:parsed.data.lines, amountStars, status:'pending', createdAt:new Date().toISOString() };
   orders.push(order); await saveOrders(orders);
   let invoiceLink: string | undefined;
-  if (process.env.BOT_TOKEN) invoiceLink = await createStarsInvoice(order.id, 'Заказ RAID STORE', `${selected.length} позиций. Заказ ${order.id}`, amountStars);
+  if (process.env.RSL_VALUE_BOT_TOKEN || process.env.BOT_TOKEN) invoiceLink = await createStarsInvoice(order.id, 'Заказ RAID STORE', `${selected.length} позиций. Заказ ${order.id}`, amountStars);
   res.status(201).json({order,invoiceLink});
 });
 
@@ -134,7 +134,7 @@ app.get('/api/admin/orders', async (req,res) => { if(req.header('authorization')
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..'); app.use(express.static(path.join(root,'dist','web'))); app.get('/{*path}',(req,res,next)=>req.path.startsWith('/api/')?next():res.sendFile(path.join(root,'dist','web','index.html')));
 
 async function startTelegramPolling(){
-  const token=process.env.BOT_TOKEN;if(!token||process.env.TELEGRAM_POLLING!=='true')return;
+  const token=process.env.RSL_VALUE_BOT_TOKEN||process.env.BOT_TOKEN;if(!token||process.env.TELEGRAM_POLLING!=='true')return;
   let offset=0;let connected=false;const base=`https://api.telegram.org/bot${token}`;
   console.log('Telegram polling enabled');
   while(true){
