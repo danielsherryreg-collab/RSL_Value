@@ -1,19 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import OfferMarket from './OfferMarket';
 import ScreenshotAnalyzer, { type AutoFillData, type Screen } from './ScreenshotAnalyzer';
+import { championMatches, champions } from './champions';
 
-type ChampionId='taras'|'marichka'|'galathir'|'nais'|'rotos'|'siphi'|'narses'|'ankora'|'trunda'|'gnut'|'kymar'|'armanz';
+type ChampionId=string;
 type FormState={power:number;level:number;legendaries:number;mythicals:number;voidLegendaries:number;sixStar:number;greatHall:number;factionWars:number;clanBoss:'normal'|'brutal'|'nightmare'|'ultra';arena:'bronze'|'silver'|'gold'|'platinum';gems:number;sacred:number;voidShards:number;legendaryBooks:number;champions:ChampionId[]};
 type View='home'|'estimate'|'market';
 
-const champions:{id:ChampionId;name:string;role:string}[]=[
-  {id:'taras',name:'Тарас',role:'Арена'},{id:'marichka',name:'Маричка',role:'Арена'},
-  {id:'galathir',name:'Галатир',role:'Арена'},{id:'nais',name:'Наиз',role:'Арена'},
-  {id:'rotos',name:'Ротос',role:'Арена'},{id:'siphi',name:'Сифи',role:'Арена'},
-  {id:'narses',name:'Нарсес',role:'Арена'},{id:'ankora',name:'Анкора',role:'Арена'},
-  {id:'trunda',name:'Трунда',role:'Гидра'},{id:'gnut',name:'Гнут',role:'Боссы'},
-  {id:'kymar',name:'Каймер',role:'ПВЕ'},{id:'armanz',name:'Арманз',role:'Арена'}
-];
 const combos=[
   {ids:['taras','marichka'] as ChampionId[],name:'Тарас + Маричка',bonus:38000,detail:'Премиальная арена-связка.'},
   {ids:['galathir','nais'] as ChampionId[],name:'Галатир + Наиз',bonus:30000,detail:'Сильное ядро для высокоуровневой арены.'},
@@ -50,6 +43,13 @@ function Footer(){return <footer><div className="logo"><i>R</i><b>RSL<span>VALUE
 
 function Home(){return <main className="home-page"><section className="hero home-hero"><div className="hero-copy"><div className="kicker"><span>●</span> УМНАЯ ОЦЕНКА АККАУНТА</div><h1><em>ОЦЕНИ СИЛУ.</em><br/>УЗНАЙ ЦЕНУ.<br/><small>RAID SHADOW LEGENDS</small></h1><div className="hero-line"/><p>Загрузи полный комплект скриншотов. Мы разберём героев, прогресс, ресурсы, подземелья и экипировку.</p><div className="home-actions"><a className="primary" href="#estimate">Оценка <span>→</span></a><a className="secondary home-buy" href="#market">Купить <span>→</span></a></div></div><div className="home-mark"><i>R</i><span>VISION VALUE</span></div></section><section className="how home-how"><div className="section-title"><div><span>02 / МЕТОДИКА</span><h2>Что влияет на цену</h2></div></div><div className="factor-grid">{[['01','Редкие герои','Мифические и Войд-легендарные герои создают основную ценность коллекции.'],['02','Игровой прогресс','КБ, арена, Войны фракций и Большой зал показывают готовность к эндгейму.'],['03','Запас ресурсов','Осколки, книги и самоцветы позволяют новому владельцу развивать аккаунт.']].map(item=><article key={item[0]}><b>{item[0]}</b><h3>{item[1]}</h3><p>{item[2]}</p></article>)}</div></section></main>}
 
+function ChampionPicker({selected,onChange}:{selected:string[];onChange:(ids:string[])=>void}){
+  const[query,setQuery]=useState('');
+  const matches=useMemo(()=>champions.filter(champion=>!selected.includes(champion.id)&&championMatches(champion,query)).slice(0,query?12:8),[query,selected]);
+  const selectedChampions=selected.map(id=>champions.find(champion=>champion.id===id)).filter((champion):champion is (typeof champions)[number]=>Boolean(champion));
+  return <fieldset className="champion-fieldset champion-picker"><legend><i>3</i>Ключевые герои</legend><div className="champion-search"><span>⌕</span><input value={query} onChange={event=>setQuery(event.target.value)} placeholder="Введите имя героя: Тарас, Galathir…"/><small>{champions.length} героев</small></div>{selectedChampions.length>0&&<div className="selected-champions">{selectedChampions.map(champion=><button type="button" key={champion.id} onClick={()=>onChange(selected.filter(id=>id!==champion.id))}><span>{champion.name}</span><small>{champion.rarity}</small><b>×</b></button>)}</div>}<div className="champion-results">{matches.map(champion=><button type="button" key={champion.id} onClick={()=>{onChange([...selected,champion.id]);setQuery('')}}><i>{champion.name[0]}</i><span><b>{champion.name}</b><small>{champion.original} · {champion.rarity}</small></span><strong>＋</strong></button>)}{!matches.length&&<p>Герой не найден. Попробуйте часть русского или английского имени.</p>}</div></fieldset>;
+}
+
 function Calculator({form,setForm}:{form:FormState;setForm:React.Dispatch<React.SetStateAction<FormState>>}){
   const[ready,setReady]=useState(false);const result=useMemo(()=>estimate(form),[form]);
   const update=<K extends keyof FormState>(key:K,value:FormState[K])=>setForm(current=>({...current,[key]:value}));
@@ -57,7 +57,7 @@ function Calculator({form,setForm}:{form:FormState;setForm:React.Dispatch<React.
   return <section className="calculator" id="calculator"><div className="section-title"><div><span>02 / ПРОВЕРКА ДАННЫХ</span><h2>Проверьте автозаполнение</h2></div><p>Исправьте значения, которые система прочитала неточно.</p></div><div className="calc-grid"><form onSubmit={event=>{event.preventDefault();setReady(true)}}>
     <Fieldset n={1} title="Основа аккаунта"><Field label="Уровень" value={form.level} onChange={value=>update('level',value)}/><Field label="Сила аккаунта" value={form.power} step={.1} suffix="млн" onChange={value=>update('power',value)}/></Fieldset>
     <Fieldset n={2} title="Коллекция"><Field label="Легендарных героев" value={form.legendaries} onChange={value=>update('legendaries',value)}/><Field label="Мифических героев" value={form.mythicals} onChange={value=>update('mythicals',value)}/><Field label="Легендарных Войд" value={form.voidLegendaries} onChange={value=>update('voidLegendaries',value)}/><Field label="Героев 6★" value={form.sixStar} onChange={value=>update('sixStar',value)}/></Fieldset>
-    <fieldset className="champion-fieldset"><legend><i>3</i>Ключевые герои</legend><div className="champion-grid">{champions.map(champion=><button type="button" className={form.champions.includes(champion.id)?'selected':''} onClick={()=>update('champions',form.champions.includes(champion.id)?form.champions.filter(id=>id!==champion.id):[...form.champions,champion.id])} key={champion.id}><span>{champion.name[0]}</span><b>{champion.name}</b><small>{champion.role}</small><i>{form.champions.includes(champion.id)?'✓':'+'}</i></button>)}</div></fieldset>
+    <ChampionPicker selected={form.champions} onChange={value=>update('champions',value)}/>
     <Fieldset n={4} title="Прогресс"><Field label="Звёзды Войн фракций" value={form.factionWars} onChange={value=>update('factionWars',value)}/><Field label="Бонусы Большого зала" value={form.greatHall} onChange={value=>update('greatHall',value)}/><SelectField label="Клановый босс" value={form.clanBoss} onChange={value=>update('clanBoss',value as FormState['clanBoss'])} options={[{value:'normal',label:'Обычный / Сложный'},{value:'brutal',label:'Жестокий'},{value:'nightmare',label:'Кошмарный'},{value:'ultra',label:'Ультра-кошмарный'}]}/><SelectField label="Классическая арена" value={form.arena} onChange={value=>update('arena',value as FormState['arena'])} options={[{value:'bronze',label:'Бронза'},{value:'silver',label:'Серебро'},{value:'gold',label:'Золото'},{value:'platinum',label:'Платина'}]}/></Fieldset>
     <Fieldset n={5} title="Ресурсы"><Field label="Самоцветы" value={form.gems} onChange={value=>update('gems',value)}/><Field label="Сакральные осколки" value={form.sacred} onChange={value=>update('sacred',value)}/><Field label="Войд-осколки" value={form.voidShards} onChange={value=>update('voidShards',value)}/><Field label="Легендарные книги" value={form.legendaryBooks} onChange={value=>update('legendaryBooks',value)}/></Fieldset>
     <button className="primary calculate" type="submit">Получить оценку <span>→</span></button></form>
