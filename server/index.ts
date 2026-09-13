@@ -18,7 +18,7 @@ const requireAdmin:express.RequestHandler=(req,res,next)=>adminIds().includes(re
 app.get('/api/health', (_req,res) => res.json({ ok:true }));
 app.get('/api/products', async (_req,res) => res.json((await getProducts()).filter(p=>p.available)));
 
-const analysisSchema=z.object({screens:z.array(z.object({slotId:z.string().max(40),label:z.string().max(100),image:z.string().startsWith('data:image/').max(1_500_000)})).min(1).max(28)});
+const analysisSchema=z.object({screens:z.array(z.object({slotId:z.string().max(40),label:z.string().max(100),image:z.string().startsWith('data:image/').max(1_500_000)})).min(1).max(30)});
 app.post('/api/analysis/screens',telegramAuth,async(req,res)=>{
   const parsed=analysisSchema.safeParse(req.body);if(!parsed.success)return res.status(400).json({error:'Один из скриншотов слишком большой или повреждён'});
   const apiKey=process.env.OPENAI_API_KEY;if(!apiKey)return res.status(503).json({error:'Автораспознавание ещё не подключено: администратору нужно добавить OPENAI_API_KEY в Railway. Скриншоты сохранены в форме и их можно отправить модератору.'});

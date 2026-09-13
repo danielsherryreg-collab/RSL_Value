@@ -31,7 +31,9 @@ const slots: Slot[] = [
   {id:'tavern_level',title:'Таверна · повышение уровня',hint:'Запас пива и героев-корма',group:'Таверна'},
   {id:'tavern_rank',title:'Таверна · повышение ранга',hint:'Запас героев для ранга',group:'Таверна'},
   {id:'tavern_skills',title:'Таверна · улучшение навыков',hint:'Книги редкости',group:'Таверна'},
-  {id:'tavern_ascend',title:'Таверна · развитие',hint:'Зелья и материалы',group:'Таверна'}
+  {id:'tavern_ascend',title:'Таверна · развитие',hint:'Зелья и материалы',group:'Таверна'},
+  {id:'profile_frames',title:'Рамки профиля',hint:'Все доступные редкие и событийные рамки',group:'Рамки и аватары'},
+  {id:'profile_avatars',title:'Аватары профиля',hint:'Все доступные редкие и событийные аватары',group:'Рамки и аватары'}
 ];
 
 const compress = (file: File) => new Promise<string>((resolve,reject)=>{
