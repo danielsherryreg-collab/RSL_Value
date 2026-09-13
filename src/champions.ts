@@ -1,4 +1,6 @@
-export type Champion = { id: string; name: string; original: string; role: string; rarity: 'Мифический' | 'Легендарный'; aliases?: string[] };
+import { allLegendaryNames } from './allLegendaryNames.js';
+
+export type Champion = { id: string; name: string; original: string; role: string; rarity: 'Мифический' | 'Легендарный' | 'Эпический'; aliases?: string[] };
 
 const mythical: Array<[string,string,string,string?]> = [
   ['alaz','Алаз Солнценосец','Alaz the Sunbearer'],['anaxia','Анаксия Возрождённая','Anaxia the Reborn'],['androc','Андрок Славный','Androc the Glorious'],
@@ -20,19 +22,28 @@ const legendary: Array<[string,string,string,string?,string?]> = [
   ['acrizia','Акриция','Acrizia','Боссы'],['armanz','Арманз Великолепный','Armanz the Magnificent','Арена'],['gnut','Гнут','Gnut','Боссы'],
   ['siphi','Сифи Невеста Драков','Siphi the Lost Bride','Арена'],['rotos','Ротос Потерянный Жених','Rotos the Lost Groom','Арена'],
   ['duchess','Герцогиня Лилиту','Duchess Lilitu','Поддержка'],['warlord','Воевода','Warlord','Арена'],['yumeko','Юмэко','Yumeko','Арена'],
-  ['nekret','Нехрет Великий','Nekhret the Great','Арена'],['harima','Харима','Harima','Арена'],['georgid','Георгид Разрушитель','Georgid the Breaker','Арена'],['narses','Нарсес','Narses','Арена'],['ankora','Анкора','Ankora','Арена'],
+  ['nekret','Нехрет Великий','Nekhret the Great','Арена'],['harima','Харима','Harima','Арена'],['georgid','Георгид Разрушитель','Georgid the Breaker','Арена'],['narses','Нарсес','Wight King Narses','Арена'],['ankora','Анкора','Wight Queen Ankora','Арена'],
   ['leorius','Леориус Гордый','Leorius the Proud','Арена'],['cardiel','Кардиэль','Cardiel','Поддержка'],['krisk','Криск Вечный','Krisk the Ageless','Гидра'],
   ['trunda','Трунда Гилтмолот','Trunda Giltmallet','Гидра'],['kymar','Принц Каймер','Prince Kymar','ПВЕ'],['thor','Тор Фэйхаммер','Thor Faehammer','Урон'],
   ['ninja','Ниндзя','Ninja','Боссы'],['marius','Мариус Отважный','Marius the Gallant','Эндгейм'],['ramantu','Романту Кровавый Клык','Ramantu Drakesblood','Арена'],
   ['lydia','Лидия Вестница Смерти','Lydia the Deathsiren','ПВЕ'],['mithrala','Митрала Жизненная Погибель','Mithrala Lifebane','Поддержка'],
-  ['teox','Теокс Несравненный','Teox the Incomparable','Урон'],['odin','Один Всебатя','Odin Faefather','Арена'],['freyja','Фрейя Ткачиха Судеб','Freyja Fateweaver','Поддержка'],
-  ['helicath','Хеликат','Helicath','Клановый босс'],['maneater','Людоед','Maneater','Клановый босс'],['ukko','Могучий Укко','Mighty Ukko','Гидра'],
+  ['teox','Теокс Несравненный','Legate Teox','Урон'],['odin','Один Всебатя','Odin Faefather','Арена'],['freyja','Фрейя Ткачиха Судеб','Freyja Fateweaver','Поддержка'],
+  ['helicath','Хеликат','Helicath','Клановый босс'],['ukko','Могучий Укко','Mighty Ukko','Гидра'],
   ['tuhanarak','Туханарак','Tuhanarak','Поддержка'],['graazur','Гразур Железное Брюхо','Graazur Irongut','Гидра'],['artak','Артак','Artak','ПВЕ']
 ];
 
-export const champions: Champion[] = [
+const featuredChampions: Champion[] = [
   ...mythical.map(([id,name,original,alias])=>({id,name,original,role:'Мифический герой',rarity:'Мифический' as const,aliases:alias?[alias]:[]})),
   ...legendary.map(([id,name,original,role='Легендарный герой',alias])=>({id,name,original,role,rarity:'Легендарный' as const,aliases:alias?[alias]:[]}))
+];
+
+const slug=(name:string)=>`legendary_${name.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'')}`;
+const featuredOriginals=new Set(featuredChampions.map(champion=>champion.original.toLowerCase().replace(/[^a-z0-9]/g,'')));
+export const champions: Champion[] = [
+  ...featuredChampions,
+  ...allLegendaryNames.filter(name=>!featuredOriginals.has(name.toLowerCase().replace(/[^a-z0-9]/g,''))).map(name=>({id:slug(name),name,original:name,role:'Легендарный герой',rarity:'Легендарный' as const,aliases:[]})),
+  {id:'maneater',name:'Людоед',original:'Maneater',role:'Клановый босс',rarity:'Эпический',aliases:['Людоед']},
+  {id:'seeker',name:'Ловец',original:'Seeker',role:'Арена / Клановый босс',rarity:'Эпический',aliases:['Искатель']}
 ];
 
 export const normalizeChampionSearch = (value:string) => value.toLocaleLowerCase('ru-RU').replace(/ё/g,'е').replace(/[^a-zа-я0-9]/g,'');
