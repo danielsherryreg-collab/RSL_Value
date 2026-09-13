@@ -1,4 +1,5 @@
 import type { AuctionListing, Order, Product, StoreOffer } from '../shared/types';
+import type { AutoFillData } from './ScreenshotAnalyzer';
 
 const initData = () => window.Telegram?.WebApp.initData || '';
 
@@ -32,4 +33,5 @@ export const api = {
   adminSession: () => request<{isAdmin:boolean}>('/admin/session'),
   pendingOffers: () => request<StoreOffer[]>('/admin/offers/pending'),
   acceptOffer: (id:string,commissionRub:number) => request<StoreOffer>(`/admin/offers/${id}/accept`,{method:'POST',body:JSON.stringify({commissionRub})})
+  ,analyzeScreens: (screens:{slotId:string;label:string;image:string}[]) => request<AutoFillData>('/analysis/screens',{method:'POST',body:JSON.stringify({screens})})
 };
