@@ -21,7 +21,7 @@ const toDataUrl = async (url: string) => new Promise<string>((resolve, reject) =
   image.src = url;
 });
 
-export default function OfferMarket({ screens, estimateRub }: { screens: Screen[]; estimateRub: number }) {
+export default function OfferMarket({ screens, estimateRub, mode = 'all' }: { screens: Screen[]; estimateRub: number; mode?: 'all' | 'sell' | 'buy' }) {
   const [offers, setOffers] = useState<StoreOffer[]>([]);
   const [pending, setPending] = useState<StoreOffer[]>([]);
   const [incoming, setIncoming] = useState<StoreOffer>();
@@ -97,8 +97,8 @@ export default function OfferMarket({ screens, estimateRub }: { screens: Screen[
     </article>;
   };
 
-  return <section className="market offer-market" id="market">
-    <div className="section-title"><div><span>02 / ОФФЕРЫ</span><h2>Продать или купить</h2></div><p>Продавец отправляет заявку, администратор добавляет комиссию и публикует аккаунт одной кнопкой.</p></div>
+  return <section className={`market offer-market ${mode === 'buy' ? 'buy-only' : mode === 'sell' ? 'sell-only' : ''}`} id="market">
+    <div className="section-title"><div><span>{mode === 'buy' ? 'МАГАЗИН' : '03 / ОФФЕР'}</span><h2>{mode === 'buy' ? 'Купить аккаунт' : 'Отправить оффер'}</h2></div><p>{mode === 'buy' ? 'Аккаунты, принятые и опубликованные администраторами RSL Value.' : 'После оценки отправьте аккаунт администраторам на проверку и публикацию.'}</p></div>
 
     {incoming && incoming.status === 'pending' && !isAdmin && <div className="incoming-offer pending"><div><span>ОФФЕР НА ПРОВЕРКЕ</span><h3>{incoming.title}</h3><p>Заявка доступна для принятия только администраторам RSL Value.</p></div><div className="incoming-price"><small>Цена продавца</small><b>{fmt(incoming.offerPriceRub)} ₽</b></div></div>}
     {incoming?.status === 'active' && <div className="incoming-offer active"><div><span>ОФФЕР ОПУБЛИКОВАН</span><h3>{incoming.title}</h3><p>Администратор принял предложение, аккаунт уже находится в магазине.</p></div><div className="incoming-price"><small>Цена в магазине</small><b>{fmt(incoming.retailPriceRub || 0)} ₽</b></div></div>}
