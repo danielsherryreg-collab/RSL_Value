@@ -87,7 +87,7 @@ app.post('/api/telegram/webhook', async (req,res) => {
   const mainMenu=(userId:number)=>({inline_keyboard:[
     [{text:'📋 Мои офферы',callback_data:'menu:my_offers'},{text:'🛒 Магазин',web_app:{url:`${appUrl}/#market`}}],
     [{text:'➕ Создать оффер',web_app:{url:`${appUrl}/#estimate`}}],
-    ...(adminIds().includes(userId)?[[{text:'🛡 Офферы на проверке',callback_data:'admin:offers'},{text:'📦 Управление заказами',callback_data:'admin:orders'}],[{text:'🗑 Управление аккаунтами',callback_data:'admin:accounts'}]]:[])
+    ...(adminIds().includes(userId)?[[{text:'🛡 Рассмотрение',callback_data:'admin:offers'},{text:'📦 Заказы',callback_data:'admin:orders'}],[{text:'🗑 Управление аккаунтами',callback_data:'admin:accounts'}]]:[])
   ]});
   if (message?.text && /^\/(?:start|menu)(?:@rsl_value_bot)?(?:\s|$)/i.test(message.text) && appUrl) {
     await sendMessage(message.chat.id, adminIds().includes(message.from.id)?'Панель RSL Value. Вам доступны функции администратора.':'Добро пожаловать в RSL Value! Здесь можно проверить статус оффера, оценить аккаунт или открыть магазин.', mainMenu(message.from.id));
