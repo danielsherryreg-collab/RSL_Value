@@ -71,6 +71,11 @@ export interface StoreOffer {
   acceptedByTelegramUserId?: number;
   acceptedByUsername?: string;
   moderationFlags?: string[];
+  proposedPriceRub?: number;
+  priceProposalStatus?: 'pending' | 'accepted' | 'rejected';
+  priceProposedAt?: string;
+  priceProposedByTelegramUserId?: number;
+  priceProposedByUsername?: string;
   accountData?: {
     level:number; power:number; legendaries:number; mythicals:number; voidLegendaries:number; sixStar:number;
     greatHall:number; factionWars:number; clanBoss:string; hydra:string; arena:string; gems:number; energy:number;
