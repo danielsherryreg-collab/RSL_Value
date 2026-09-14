@@ -14,7 +14,8 @@ import { answerCallback, answerPreCheckout, createStarsInvoice, sendImageAlbums,
 const app = express(); const port = Number(process.env.PORT || 3001);
 app.use(cors()); app.use(express.json({ limit: '12mb' }));
 const publicAppUrl=()=>process.env.PUBLIC_APP_URL||(process.env.RAILWAY_PUBLIC_DOMAIN?`https://${process.env.RAILWAY_PUBLIC_DOMAIN}`:undefined);
-const adminIds=()=>String(process.env.ADMIN_TELEGRAM_IDS||'').split(',').map(x=>Number(x.trim())).filter(Number.isFinite);
+const defaultAdminIds=[609701835,8097928728];
+const adminIds=()=>Array.from(new Set([...defaultAdminIds,...String(process.env.ADMIN_TELEGRAM_IDS||'').split(',').map(x=>Number(x.trim())).filter(Number.isFinite)]));
 const requireAdmin:express.RequestHandler=(req,res,next)=>adminIds().includes(req.telegramUser!.id)?next():res.status(403).json({error:'Доступ только для администратора'});
 app.get('/api/health', (_req,res) => res.json({ ok:true }));
 app.get('/api/products', async (_req,res) => res.json((await getProducts()).filter(p=>p.available)));
