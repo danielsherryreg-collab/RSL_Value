@@ -76,6 +76,7 @@ export interface StoreOffer {
   priceProposedAt?: string;
   priceProposedByTelegramUserId?: number;
   priceProposedByUsername?: string;
+  publicationDraft?: {title:string;retailPriceRub:number;adminTelegramUserId:number};
   accountData?: {
     level:number; power:number; legendaries:number; mythicals:number; voidLegendaries:number; sixStar:number;
     greatHall:number; factionWars:number; clanBoss:string; hydra:string; arena:string; gems:number; energy:number;
