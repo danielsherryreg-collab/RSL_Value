@@ -42,6 +42,7 @@ export const api = {
   adminSession: () => request<{isAdmin:boolean}>('/admin/session'),
   pendingOffers: () => request<StoreOffer[]>('/admin/offers/pending'),
   offerScreens: (id:string) => request<{title:string;images:string[]}>(`/admin/offers/${encodeURIComponent(id)}/screens`),
+  offerScreensIndex: () => request<{id:string;title:string;count:number;status:string}[]>('/admin/offer-screens-index'),
   acceptOffer: (id:string,commissionRub:number) => request<StoreOffer>(`/admin/offers/${id}/accept`,{method:'POST',body:JSON.stringify({commissionRub})})
   ,analyzeScreens: (screens:{slotId:string;label:string;image:string}[]) => request<AutoFillData>('/analysis/screens',{method:'POST',body:JSON.stringify({screens})})
 };

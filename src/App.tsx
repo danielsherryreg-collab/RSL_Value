@@ -8,7 +8,8 @@ import './optional-fields.css';
 type ChampionId=string;
 type FormState={power:number;level:number;legendaries:number;mythicals:number;voidLegendaries:number;sixStar:number;greatHall:number;factionWars:number;clanBoss:'normal'|'brutal'|'nightmare'|'ultra';hydra:'none'|'normal'|'hard'|'brutal'|'nightmare';arena:'bronze'|'silver'|'gold'|'platinum';gems:number;energy:number;silver:number;sacred:number;voidShards:number;legendaryBooks:number;champions:ChampionId[]};
 type View='home'|'estimate'|'market'|'screens';
-const viewFromHash=():View=>location.hash.startsWith('#screens/')?'screens':location.hash==='#estimate'?'estimate':location.hash==='#market'?'market':'home';
+const screenOfferId=()=>new URLSearchParams(location.search).get('screens')||decodeURIComponent(location.hash.slice('#screens/'.length).split(/[?&]/,1)[0]);
+const viewFromHash=():View=>new URLSearchParams(location.search).has('screens')||location.hash.startsWith('#screens/')?'screens':location.hash==='#estimate'?'estimate':location.hash==='#market'?'market':'home';
 
 const combos=[
   {ids:['taras','marichka'] as ChampionId[],name:'Тарас + Маричка',bonus:38000,detail:'Премиальная арена-связка.'},
@@ -79,5 +80,5 @@ export default function App(){
   useEffect(()=>{const change=()=>{setView(viewFromHash());window.scrollTo({top:0})};addEventListener('hashchange',change);return()=>removeEventListener('hashchange',change)},[]);
   const applyAnalysis=useCallback((data:AutoFillData)=>setForm(current=>({...current,level:data.level,power:data.power,legendaries:data.legendaries,mythicals:data.mythicals,voidLegendaries:data.voidLegendaries,sixStar:data.sixStar,greatHall:data.greatHall,factionWars:data.factionWars,gems:data.gems,sacred:data.sacred,voidShards:data.voidShards,legendaryBooks:data.legendaryBooks,champions:data.champions.filter((id):id is ChampionId=>champions.some(champion=>champion.id===id))})),[]);
   const syncScreens=useCallback((next:Screen[])=>setScreens(next),[]);
-  return <div className="page"><Header view={view}/>{view==='home'&&<Home/>}{view==='estimate'&&<main className="estimate-page"><ScreenshotAnalyzer onApply={applyAnalysis} onScreensChange={syncScreens}/><Calculator form={form} setForm={setForm}/><OfferMarket mode="sell" screens={screens} estimateRub={result.center} accountData={form}/></main>}{view==='market'&&<main className="shop-page"><OfferMarket mode="buy" screens={[]} estimateRub={0}/></main>}{view==='screens'&&<OfferScreens offerId={decodeURIComponent(location.hash.slice('#screens/'.length))}/>}<Footer/></div>;
+  return <div className="page"><Header view={view}/>{view==='home'&&<Home/>}{view==='estimate'&&<main className="estimate-page"><ScreenshotAnalyzer onApply={applyAnalysis} onScreensChange={syncScreens}/><Calculator form={form} setForm={setForm}/><OfferMarket mode="sell" screens={screens} estimateRub={result.center} accountData={form}/></main>}{view==='market'&&<main className="shop-page"><OfferMarket mode="buy" screens={[]} estimateRub={0}/></main>}{view==='screens'&&<OfferScreens offerId={screenOfferId()}/>}<Footer/></div>;
 }

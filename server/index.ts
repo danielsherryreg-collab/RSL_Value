@@ -25,7 +25,7 @@ function deduplicateOpenOffers(items:StoreOffer[]){const result:StoreOffer[]=[];
 async function cleanupOfferDuplicates(){const current=await getOffers();const clean=deduplicateOpenOffers(current);if(clean.removed){await saveOffers(clean.items);console.log(`Removed duplicate offers: ${clean.removed}`)}}
 const publicationPreview=(item:StoreOffer)=>({inline_keyboard:[[{text:'✅ Опубликовать',callback_data:`admin:confirm_publish:${item.id}`}],[{text:'✏️ Изменить название',callback_data:`admin:publish_title:${item.id}`},{text:'💰 Изменить цену',callback_data:`admin:publish_price:${item.id}`}],[{text:'← К офферу',callback_data:`admin:view_offer:${item.id}`}]]});
 const reviewOfferMarkup=(item:StoreOffer)=>({inline_keyboard:[
-  ...(item.images.length&&publicAppUrl()?[[{text:`🖼 Смотреть все скриншоты (${item.images.length})`,web_app:{url:`${publicAppUrl()}/#screens/${encodeURIComponent(item.id)}`}}]]:[]),
+  ...(item.images.length&&publicAppUrl()?[[{text:`🖼 Смотреть все скриншоты (${item.images.length})`,web_app:{url:`${publicAppUrl()}/?screens=${encodeURIComponent(item.id)}`}}]]:[]),
   ...(item.status==='pending'?[[{text:'💬 Предложить свою цену',callback_data:`admin:propose_price:${item.id}`}],[{text:'📢 Опубликовать',callback_data:`admin:publish_offer:${item.id}`}]]:[]),
   ...(item.sellerUsername?[[{text:'✉️ Написать продавцу',url:`https://t.me/${item.sellerUsername}`}]]:[]),
   [{text:'← К офферам',callback_data:'admin:offers'}]
@@ -71,6 +71,7 @@ app.post('/api/offers',telegramAuth,async(req,res)=>{
 });
 app.get('/api/admin/session',telegramAuth,(req,res)=>res.json({isAdmin:adminIds().includes(req.telegramUser!.id)}));
 app.get('/api/admin/offers/pending',telegramAuth,requireAdmin,async(_req,res)=>res.json((await getOffers()).filter(x=>x.status==='pending').reverse()));
+app.get('/api/admin/offer-screens-index',telegramAuth,requireAdmin,async(_req,res)=>res.json((await getOffers()).filter(x=>x.images.length>0).map(x=>({id:x.id,title:x.title,count:x.images.length,status:x.status})).reverse()));
 app.get('/api/admin/offers/:id/screens',telegramAuth,requireAdmin,async(req,res)=>{const item=(await getOffers()).find(x=>x.id===req.params.id);if(!item)return res.status(404).json({error:'Оффер не найден'});res.setHeader('Cache-Control','private, no-store');res.json({title:item.title,images:item.images})});
 app.post('/api/admin/offers/:id/accept',telegramAuth,requireAdmin,async(req,res)=>{const parsed=z.object({commissionRub:z.number().int().min(0).max(10_000_000)}).safeParse(req.body);if(!parsed.success)return res.status(400).json({error:'Укажите корректную комиссию'});const items=await getOffers();const item=items.find(x=>x.id===req.params.id);if(!item)return res.status(404).json({error:'Оффер не найден'});if(item.status!=='pending')return res.status(409).json({error:'Оффер уже обработан'});item.status='active';item.commissionRub=parsed.data.commissionRub;item.retailPriceRub=item.offerPriceRub+parsed.data.commissionRub;item.acceptedAt=new Date().toISOString();item.acceptedByTelegramUserId=req.telegramUser!.id;item.acceptedByUsername=req.telegramUser!.username;await saveOffers(items);sendMessage(item.sellerTelegramUserId,`Оффер принят ✅\n${item.title}\nЦена в магазине: ${item.retailPriceRub.toLocaleString('ru-RU')} ₽`).catch(err=>console.error('Seller notification failed',err));res.json(item)});
 
