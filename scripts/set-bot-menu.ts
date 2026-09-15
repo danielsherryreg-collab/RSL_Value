@@ -5,5 +5,8 @@ async function call(method:string,body:object){const response=await fetch(`https
 const me=await call('getMe',{}) as {result?:{username?:string}};
 if(me.result?.username?.toLowerCase()!=='rsl_value_bot') throw new Error(`Token belongs to @${me.result?.username||'unknown'}, expected @rsl_value_bot`);
 await call('setChatMenuButton',{menu_button:{type:'web_app',text:'Оценить аккаунт',web_app:{url}}});
+await call('setMyName',{name:'RAID STORE — Оценка аккаунтов'});
+await call('setMyDescription',{description:'Оценка аккаунтов RAID: Shadow Legends по скриншотам. Предложить аккаунт, следить за оффером и смотреть магазин.'});
+await call('setMyShortDescription',{short_description:'Оценка и магазин аккаунтов RAID: Shadow Legends'});
 await call('setMyCommands',{commands:[{command:'start',description:'Главное меню'},{command:'menu',description:'Показать меню'},{command:'offers',description:'Магазин аккаунтов'},{command:'sell',description:'Предложить аккаунт'}]});
-console.log(`RSL Value menu configured: ${url}`);
+console.log(`RAID STORE bot branding and menu configured: ${url}`);

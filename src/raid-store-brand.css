@@ -1,0 +1,40 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap');
+
+:root{font-family:Montserrat,Arial,sans-serif;--acid:#f7d15f;--purple:#287ca6;--muted:#a4a8ac;background:#080a0d;color:#fff}
+body{background:#080a0d}
+.page{background:radial-gradient(circle at 85% 16%,#10466555,transparent 28%),#080a0d}
+.topbar{height:78px;border-bottom:0;position:relative;z-index:2}
+.logo{font:800 15px Montserrat,Arial,sans-serif;letter-spacing:.035em}
+.logo>i{width:40px;height:40px;transform:none;border:0;border-radius:50%;background:linear-gradient(135deg,#103e56,#081018);box-shadow:0 0 0 1px #327395,0 0 24px #1576ad55;color:var(--acid);font:900 22px Montserrat,Arial,sans-serif}
+.logo>b span{color:#fff;margin-left:0}
+.ghost,.secondary,.home-buy{border:1px solid #364451;border-radius:100px;background:#1a1e26;color:#fff}
+.header-buy{padding:12px 22px}
+.hero.home-hero{max-width:none;min-height:600px;padding:80px max(30px,calc((100vw - 1180px)/2)) 95px;background:radial-gradient(ellipse at 69% 37%,#155a75a8,transparent 45%),linear-gradient(90deg,#070708 38%,#0c1b26 75%,#07090f);border-bottom:1px solid #283039}
+.hero.home-hero:before{display:none}
+.hero-copy{max-width:690px}
+.kicker{font-size:11px;letter-spacing:.11em;color:#f7d15f}
+.hero h1{font:900 clamp(48px,7vw,92px)/.97 Montserrat,Arial,sans-serif;letter-spacing:-.06em;margin:26px 0 26px}
+.hero h1 em{color:#fff}
+.hero h1 small{font:800 clamp(20px,2.5vw,34px)/1.1 Montserrat,Arial,sans-serif;letter-spacing:-.025em;color:#fff;margin-top:18px}
+.hero-line{background:linear-gradient(90deg,#4e555c,transparent);margin:36px 0}
+.hero-copy>p{font-size:16px;color:#aeb4bb;line-height:1.7}
+.home-actions{gap:14px}
+.primary,.calculate,.buy-interest{background:#f7d15f!important;color:#151411!important;border:0;border-radius:100px!important;box-shadow:0 8px 25px #f7d15f1f;font-family:Montserrat,Arial,sans-serif;font-weight:700}
+.primary:hover,.buy-interest:hover{background:#ffe189!important}
+.home-buy{border-radius:100px!important}
+.home-mark{display:none!important}
+.section-title h2,.factor-grid h3,.upload-head h2,.range{font-family:Montserrat,Arial,sans-serif;letter-spacing:-.04em}
+.section-title h2{font-weight:800}
+.how,.calculator{background:#0b0d11}
+.factor-grid article,.calc-grid form,.result,.upload-panel,.store-card{background:#14171d!important;border-color:#333c45!important;border-radius:22px!important}
+.factor-grid article>b,.how .section-title span,.calculator .section-title>div>span{color:var(--acid)}
+.calc-grid legend i{background:var(--acid)}
+.field>div,.champion-search,.champion-results>button{background:#1b2028;border-color:#3a424d}
+.field div:focus-within,.champion-search:focus-within{border-color:var(--acid)}
+.meter span{background:linear-gradient(90deg,#13658e,#f7d15f)}
+.upload-drop:hover{background:#f7d15f0d}
+.result .notice{border-color:#957934;border-left-color:var(--acid);background:linear-gradient(100deg,#f7d15f17,#181c20)}
+.generate-offer{border-color:var(--acid);color:var(--acid)}
+.generate-offer:hover,.generate-offer.armed{background:var(--acid);color:#141411}
+footer{border-color:#2a3239}
+@media(max-width:520px){.hero.home-hero{min-height:auto;padding:60px 20px 70px}.hero h1{font-size:clamp(42px,11vw,62px)}.hero h1 small{font-size:21px}.home-actions{gap:8px}.home-actions .primary,.home-actions .secondary{font-size:13px;padding:14px 15px}.logo{font-size:12px}.logo>i{width:34px;height:34px}}

@@ -102,9 +102,9 @@ export default function OfferMarket({ screens, estimateRub, accountData, mode = 
   };
 
   return <section className={`market offer-market ${mode === 'buy' ? 'buy-only' : mode === 'sell' ? 'sell-only' : ''}`} id="market">
-    <div className="section-title"><div><span>{mode === 'buy' ? 'МАГАЗИН' : '03 / ОФФЕР'}</span><h2>{mode === 'buy' ? 'Купить аккаунт' : 'Отправить оффер'}</h2></div><p>{mode === 'buy' ? 'Аккаунты, принятые и опубликованные администраторами RSL Value.' : 'После оценки отправьте аккаунт администраторам на проверку и публикацию.'}</p></div>
+    <div className="section-title"><div><span>{mode === 'buy' ? 'МАГАЗИН' : '03 / ОФФЕР'}</span><h2>{mode === 'buy' ? 'Купить аккаунт' : 'Отправить оффер'}</h2></div><p>{mode === 'buy' ? 'Аккаунты, принятые и опубликованные администраторами RAID STORE.' : 'После оценки отправьте аккаунт администраторам на проверку и публикацию.'}</p></div>
 
-    {incoming && incoming.status === 'pending' && !isAdmin && <div className="incoming-offer pending"><div><span>ОФФЕР НА ПРОВЕРКЕ</span><h3>{incoming.title}</h3><p>Заявка доступна для принятия только администраторам RSL Value.</p></div><div className="incoming-price"><small>Цена продавца</small><b>{fmt(incoming.offerPriceRub)} ₽</b></div></div>}
+    {incoming && incoming.status === 'pending' && !isAdmin && <div className="incoming-offer pending"><div><span>ОФФЕР НА ПРОВЕРКЕ</span><h3>{incoming.title}</h3><p>Заявка доступна для принятия только администраторам RAID STORE.</p></div><div className="incoming-price"><small>Цена продавца</small><b>{fmt(incoming.offerPriceRub)} ₽</b></div></div>}
     {incoming?.status === 'active' && <div className="incoming-offer active"><div><span>ОФФЕР ОПУБЛИКОВАН</span><h3>{incoming.title}</h3><p>Администратор принял предложение, аккаунт уже находится в магазине.</p></div><div className="incoming-price"><small>Цена в магазине</small><b>{fmt(incoming.retailPriceRub || 0)} ₽</b></div></div>}
 
     {isAdmin && <div className="admin-queue"><div className="feed-head"><b>Очередь администратора</b><span>{pending.length} на проверке</span></div>{!pending.length && <div className="feed-empty">Новых офферов пока нет.</div>}{pending.map(adminCard)}</div>}

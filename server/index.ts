@@ -90,7 +90,7 @@ app.post('/api/telegram/webhook', async (req,res) => {
     ...(adminIds().includes(userId)?[[{text:'🛡 Рассмотрение',callback_data:'admin:offers'},{text:'📦 Заказы',callback_data:'admin:orders'}],[{text:'🗑 Управление аккаунтами',callback_data:'admin:accounts'}]]:[])
   ]});
   if (message?.text && /^\/(?:start|menu)(?:@rsl_value_bot)?(?:\s|$)/i.test(message.text) && appUrl) {
-    await sendMessage(message.chat.id, adminIds().includes(message.from.id)?'Панель RSL Value. Вам доступны функции администратора.':'Добро пожаловать в RSL Value! Здесь можно проверить статус оффера, оценить аккаунт или открыть магазин.', mainMenu(message.from.id));
+    await sendMessage(message.chat.id, adminIds().includes(message.from.id)?'Панель RAID STORE. Вам доступны функции администратора.':'Добро пожаловать в RAID STORE! Здесь можно проверить статус оффера, оценить аккаунт или открыть магазин.', mainMenu(message.from.id));
   } else if ((message?.text === '/offers' || message?.text === '/sell') && appUrl) {
     await sendMessage(message.chat.id, message.text === '/sell' ? 'Загрузите скриншоты, оцените аккаунт и сформируйте оффер.' : 'Откройте витрину принятых офферов.', {
       inline_keyboard: [[{ text: message.text === '/sell' ? '➕ Создать оффер' : '🛒 Смотреть аккаунты', web_app: { url: `${appUrl}/#market` } }]]
@@ -111,7 +111,7 @@ app.post('/api/telegram/webhook', async (req,res) => {
       const labels:Record<StoreOffer['status'],string>={pending:'⏳ На проверке',active:'✅ Опубликован',sold:'💰 Продан',cancelled:'❌ Отклонён'};
       const text=mine.length?`Ваши офферы:\n\n${mine.map(x=>`${labels[x.status]}\n${x.title}\nСумма продавцу: ${x.offerPriceRub.toLocaleString('ru-RU')} ₽${x.retailPriceRub?`\nЦена в магазине: ${x.retailPriceRub.toLocaleString('ru-RU')} ₽`:''}`).join('\n\n')}`:'У вас пока нет офферов.';
       await sendMessage(chatId,text,{inline_keyboard:[[{text:'➕ Создать оффер',web_app:{url:`${appUrl}/#estimate`}}],[{text:'← Главное меню',callback_data:'menu:home'}]]});
-    }else if(data==='menu:home')await sendMessage(chatId,'Главное меню RSL Value',mainMenu(userId));
+    }else if(data==='menu:home')await sendMessage(chatId,'Главное меню RAID STORE',mainMenu(userId));
     else if(data.startsWith('admin:propose_price:')){
       if(!isAdmin)await sendMessage(chatId,'Доступ только для администратора.');
       else{const offerId=data.slice('admin:propose_price:'.length);const item=(await getOffers()).find(x=>x.id===offerId&&x.status==='pending');if(!item)await sendMessage(chatId,'Оффер не найден или уже обработан.');else{pendingAdminPriceInputs.set(userId,offerId);await sendMessage(chatId,`Введите сумму, которую хотите предложить продавцу за «${item.title}».\n\nТекущая цена продавца: ${item.offerPriceRub.toLocaleString('ru-RU')} ₽\n\nОтправьте сумму цифрами или напишите «Отмена».`);}}
