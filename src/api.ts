@@ -41,6 +41,7 @@ export const api = {
   createOffer: (data:{title:string;description:string;images:string[];offerPriceRub:number;estimatedPriceRub:number;accountData:NonNullable<StoreOffer['accountData']>}) => request<StoreOffer>('/offers',{method:'POST',body:JSON.stringify(data)}),
   adminSession: () => request<{isAdmin:boolean}>('/admin/session'),
   pendingOffers: () => request<StoreOffer[]>('/admin/offers/pending'),
+  offerScreens: (id:string) => request<{title:string;images:string[]}>(`/admin/offers/${encodeURIComponent(id)}/screens`),
   acceptOffer: (id:string,commissionRub:number) => request<StoreOffer>(`/admin/offers/${id}/accept`,{method:'POST',body:JSON.stringify({commissionRub})})
   ,analyzeScreens: (screens:{slotId:string;label:string;image:string}[]) => request<AutoFillData>('/analysis/screens',{method:'POST',body:JSON.stringify({screens})})
 };
