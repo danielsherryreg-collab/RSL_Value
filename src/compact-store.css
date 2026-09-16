@@ -18,6 +18,20 @@
   margin: 0;
 }
 
+.buy-only .store-card {
+  min-height: 0;
+  max-height: none;
+  height: auto;
+}
+
+.buy-only .store-card .auction-body {
+  flex: 0 0 auto;
+}
+
+.buy-only .store-card .auction-body h3 {
+  -webkit-line-clamp: 3;
+}
+
 .details-content h2 {
   margin: 10px 0;
 }
