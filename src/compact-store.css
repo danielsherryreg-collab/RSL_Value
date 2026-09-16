@@ -1,0 +1,28 @@
+.store-carousel > .image-preview-button img {
+  object-fit: cover;
+  background: transparent;
+}
+
+.store-card .auction-body {
+  gap: 10px;
+}
+
+.store-card .auction-body h3,
+.store-card .auction-body > p,
+.store-card .store-price,
+.store-card .buy-interest {
+  margin: 0;
+}
+
+.buy-only .store-card .store-price {
+  margin: 0;
+}
+
+.details-content h2 {
+  margin: 10px 0;
+}
+
+.details-content > p,
+.details-price {
+  margin: 0 0 10px;
+}

@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import './styles.css';
 import './raid-store-brand.css';
+import './compact-store.css';
 
 window.Telegram?.WebApp.ready();
 window.Telegram?.WebApp.expand();
