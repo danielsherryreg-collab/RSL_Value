@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import type { StoreOffer } from '../shared/types';
 import { api } from './api';
 
-type Screen = { url: string; name: string };
+type Screen = { url: string; name: string; slotId?: string };
+const requiredScreenIds=['clan_boss','hydra','profile_facebook'];
 const fmt = (value: number) => new Intl.NumberFormat('ru-RU').format(Math.round(value));
 const loadOfferDraft=()=>{try{return JSON.parse(localStorage.getItem('rsl-value-offer-draft')||'{}') as {title?:string;description?:string;price?:string}}catch{return{}}};
 const toDataUrl = async (url: string, maxSide = 1000, quality = .58) => new Promise<string>((resolve, reject) => {
@@ -34,6 +35,8 @@ export default function OfferMarket({ screens, estimateRub, accountData, mode = 
   const [commissions, setCommissions] = useState<Record<string, string>>({});
   const [busyId, setBusyId] = useState('');
   const [error, setError] = useState('');
+  const [zoom, setZoom] = useState<{src:string;title:string}>();
+  const missingRequired=requiredScreenIds.filter(id=>!screens.some(screen=>screen.slotId===id));
 
   const loadOffers = () => api.offers().then(setOffers).catch(error => setError(error.message));
   const loadPending = () => api.pendingOffers().then(setPending).catch(error => setError(error.message));
@@ -55,6 +58,7 @@ export default function OfferMarket({ screens, estimateRub, accountData, mode = 
 
   const publish = async () => {
     if (screens.length < 10) return setError(`Для проверки нужно минимум 10 скриншотов. Сейчас загружено: ${screens.length}`);
+    if(missingRequired.length)return setError('Добавьте обязательные скриншоты: Клановый босс, Гидра и Профиль / привязка Facebook.');
     setBusyId('create'); setError('');
     try {
       let images = await Promise.all(screens.map(screen => toDataUrl(screen.url)));
@@ -62,7 +66,7 @@ export default function OfferMarket({ screens, estimateRub, accountData, mode = 
       if (encodedBytes() > 8_000_000) images = await Promise.all(screens.map(screen => toDataUrl(screen.url, 760, .46)));
       if (encodedBytes() > 8_000_000) throw new Error('Комплект скриншотов превышает 8 МБ даже после сжатия. Удалите несколько повторяющихся изображений.');
       const item = await api.createOffer({
-        title, description, images,
+        title, description, images, screenshotSlotIds:screens.map(screen=>screen.slotId||''),
         offerPriceRub: Number(price), estimatedPriceRub: Math.round(estimateRub), accountData: accountData!
       });
       setCreated(item);
@@ -89,7 +93,7 @@ export default function OfferMarket({ screens, estimateRub, accountData, mode = 
   const adminCard = (item: StoreOffer) => {
     const commission = Number(commissions[item.id] || 0);
     return <article className="admin-offer" key={item.id}>
-      <div className="admin-offer-images">{item.images.map((src, index) => <img src={src} alt="Скриншот аккаунта" key={index} />)}</div>
+      <div className="admin-offer-images">{item.images.map((src, index) => <button type="button" className="image-preview-button" key={index} onClick={()=>setZoom({src,title:`Скриншот ${index+1}`})}><img src={src} alt="Скриншот аккаунта"/></button>)}</div>
       <div className="admin-offer-main">
         <span>ОФФЕР НА ПРОВЕРКЕ</span><h3>{item.title}</h3><p>{item.description}</p>
         {!!item.moderationFlags?.length && <div className="moderation-warning"><b>⚠ ТРЕБУЕТ ВНИМАНИЯ МОДЕРАТОРА</b>{item.moderationFlags.map(flag => <span key={flag}>• {flag}</span>)}</div>}
@@ -110,8 +114,9 @@ export default function OfferMarket({ screens, estimateRub, accountData, mode = 
     {isAdmin && <div className="admin-queue"><div className="feed-head"><b>Очередь администратора</b><span>{pending.length} на проверке</span></div>{!pending.length && <div className="feed-empty">Новых офферов пока нет.</div>}{pending.map(adminCard)}</div>}
 
     <div className="market-layout">
-      <div className="listing-form"><div className="market-label">СОСТАВИТЬ ОФФЕР</div><h3>Предложить аккаунт</h3><p>{screens.length >= 10 ? `Скриншотов в оффере: ${screens.length}` : `Загрузите ещё ${10-screens.length} скриншот(а). Минимум — 10`}</p><input placeholder="Название аккаунта" value={title} onChange={event => setTitle(event.target.value)} /><textarea placeholder="Ключевые герои, связки, прогресс и условия передачи" value={description} onChange={event => setDescription(event.target.value)} /><label><span>Сумма, которую вы хотите получить</span><div><input type="number" min="0" value={price} onChange={event => setPrice(event.target.value)} /><b>₽</b></div></label><small>Оценка сервиса: {fmt(estimateRub)} ₽. Для отправки на проверку необходимо загрузить не менее 10 скриншотов.</small><button disabled={busyId === 'create' || screens.length < 10 || Number(price) < 0} onClick={publish}>{busyId === 'create' ? 'Отправляем…' : 'Предложить аккаунт'} <span>→</span></button>{error && <div className="market-error">{error}</div>}{created && <div className="offer-ready"><b>Оффер отправлен</b><p>{created.moderationFlags?.length?'Заявка передана на модерацию с пометкой «Требует внимания».':'Администраторы получили уведомление. После принятия аккаунт автоматически появится в магазине.'}</p></div>}</div>
-      <div className="market-feed"><div className="feed-head"><b>Магазин аккаунтов</b><span>{offers.length} предложений</span></div>{!offers.length && <div className="feed-empty">Принятых офферов пока нет. После подтверждения первый аккаунт появится здесь автоматически.</div>}{offers.map(item => <article className="store-card" key={item.id}><div className="auction-images">{item.images.map((src, index) => <img src={src} alt="Скриншот аккаунта" key={index} />)}<span>В ПРОДАЖЕ</span></div><div className="auction-body"><div className="seller">Проверено RSL Value</div><h3>{item.title}</h3><p>{item.description}</p><div className="store-price"><small>Цена в магазине</small><b>{fmt(item.retailPriceRub || item.offerPriceRub)} ₽</b>{typeof item.commissionRub === 'number' && <span>Сумма продавцу {fmt(item.offerPriceRub)} ₽ + комиссия {fmt(item.commissionRub)} ₽</span>}</div><button className="buy-interest" onClick={() => window.Telegram?.WebApp.openTelegramLink?.('https://t.me/rsl_value_bot')}>Заинтересовал аккаунт <span>→</span></button></div></article>)}</div>
+      <div className="listing-form"><div className="market-label">СОСТАВИТЬ ОФФЕР</div><h3>Предложить аккаунт</h3><p>{screens.length >= 10 ? `Скриншотов в оффере: ${screens.length}` : `Загрузите ещё ${10-screens.length} скриншот(а). Минимум — 10`}{missingRequired.length>0&&` · обязательных не хватает: ${missingRequired.length}`}</p><input placeholder="Название аккаунта" value={title} onChange={event => setTitle(event.target.value)} /><textarea placeholder="Ключевые герои, связки, прогресс и условия передачи" value={description} onChange={event => setDescription(event.target.value)} /><label><span>Сумма, которую вы хотите получить</span><div><input type="number" min="0" value={price} onChange={event => setPrice(event.target.value)} /><b>₽</b></div></label><small>Оценка сервиса: {fmt(estimateRub)} ₽. Обязательны минимум 10 снимков, включая Кланового босса, Гидру и профиль / привязку Facebook.</small><button disabled={busyId === 'create' || screens.length < 10 || missingRequired.length>0 || Number(price) < 0} onClick={publish}>{busyId === 'create' ? 'Отправляем…' : 'Предложить аккаунт'} <span>→</span></button>{error && <div className="market-error">{error}</div>}{created && <div className="offer-ready"><b>Оффер отправлен</b><p>{created.moderationFlags?.length?'Заявка передана на модерацию с пометкой «Требует внимания».':'Администраторы получили уведомление. После принятия аккаунт автоматически появится в магазине.'}</p></div>}</div>
+      <div className="market-feed"><div className="feed-head"><b>Магазин аккаунтов</b><span>{offers.length} предложений</span></div>{!offers.length && <div className="feed-empty">Принятых офферов пока нет. После подтверждения первый аккаунт появится здесь автоматически.</div>}{offers.map(item => <article className="store-card" key={item.id}><div className="auction-images">{item.images.map((src, index) => <button type="button" className="image-preview-button" key={index} onClick={()=>setZoom({src,title:`${item.title} · скриншот ${index+1}`})}><img src={src} alt="Скриншот аккаунта"/></button>)}<span>В ПРОДАЖЕ</span></div><div className="auction-body"><div className="seller">Проверено RSL Value</div><h3>{item.title}</h3><p>{item.description}</p><div className="store-price"><small>Цена в магазине</small><b>{fmt(item.retailPriceRub || item.offerPriceRub)} ₽</b>{typeof item.commissionRub === 'number' && <span>Сумма продавцу {fmt(item.offerPriceRub)} ₽ + комиссия {fmt(item.commissionRub)} ₽</span>}</div><button className="buy-interest" onClick={() => window.Telegram?.WebApp.openTelegramLink?.('https://t.me/rsl_value_bot')}>Заинтересовал аккаунт <span>→</span></button></div></article>)}</div>
     </div>
+    {zoom&&<div className="image-lightbox" role="dialog" aria-modal="true" aria-label={zoom.title} onClick={()=>setZoom(undefined)}><button type="button" aria-label="Закрыть" onClick={()=>setZoom(undefined)}>×</button><img src={zoom.src} alt={zoom.title} onClick={event=>event.stopPropagation()}/><span>{zoom.title}</span></div>}
   </section>;
 }

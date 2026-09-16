@@ -61,6 +61,7 @@ export interface StoreOffer {
   title: string;
   description: string;
   images: string[];
+  screenshotSlotIds?: string[];
   offerPriceRub: number;
   retailPriceRub?: number;
   commissionRub?: number;
