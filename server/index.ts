@@ -14,7 +14,7 @@ import { answerCallback, answerPreCheckout, createStarsInvoice, sendMessage } fr
 const app = express(); const port = Number(process.env.PORT || 3001);
 app.use(cors()); app.use(express.json({ limit: '12mb' }));
 const publicAppUrl=()=>process.env.PUBLIC_APP_URL||(process.env.RAILWAY_PUBLIC_DOMAIN?`https://${process.env.RAILWAY_PUBLIC_DOMAIN}`:undefined);
-const defaultAdminIds=[609701835,8097928728];
+const defaultAdminIds=[609701835,8097928728,8317559848,990913831];
 const adminIds=()=>Array.from(new Set([...defaultAdminIds,...String(process.env.ADMIN_TELEGRAM_IDS||'').split(',').map(x=>Number(x.trim())).filter(Number.isFinite)]));
 const pendingAdminPriceInputs=new Map<number,string>();
 const pendingAdminPublishInputs=new Map<number,{offerId:string;step:'title'|'price';title?:string}>();
@@ -101,7 +101,12 @@ app.post('/api/telegram/webhook', async (req,res) => {
     ...(adminIds().includes(userId)?[[{text:'🛡 Рассмотрение',callback_data:'admin:offers'},{text:'📦 Заказы',callback_data:'admin:orders'}],[{text:'🗑 Управление аккаунтами',callback_data:'admin:accounts'}]]:[])
   ]});
   if (message?.text && /^\/(?:start|menu)(?:@rsl_value_bot)?(?:\s|$)/i.test(message.text) && appUrl) {
-    await sendMessage(message.chat.id, adminIds().includes(message.from.id)?'Панель RAID STORE. Вам доступны функции администратора.':'Добро пожаловать в RAID STORE! Здесь можно проверить статус оффера, оценить аккаунт или открыть магазин.', mainMenu(message.from.id));
+    const startPayload=message.text.match(/^\/start(?:@rsl_value_bot)?\s+([^\s]+)$/i)?.[1];
+    const linkedOffer=startPayload?.startsWith('offer_')?(await getOffers()).find(item=>item.id===startPayload):undefined;
+    if(linkedOffer){
+      const managerUrl=`https://t.me/theiamiam?text=${encodeURIComponent(`Заинтересовал аккаунт «${linkedOffer.title}» (${(linkedOffer.retailPriceRub||linkedOffer.offerPriceRub).toLocaleString('ru-RU')} ₽).`)}`;
+      await sendMessage(message.chat.id,`📋 Выбранный аккаунт\n\n${linkedOffer.title}\nЦена: ${(linkedOffer.retailPriceRub||linkedOffer.offerPriceRub).toLocaleString('ru-RU')} ₽\n\nНажмите кнопку ниже, чтобы связаться с менеджером по этому предложению.`,{inline_keyboard:[[{text:'💬 Написать менеджеру',url:managerUrl}],[{text:'🛒 Открыть магазин',web_app:{url:`${appUrl}/#market`}}],[{text:'← Главное меню',callback_data:'menu:home'}]]});
+    }else await sendMessage(message.chat.id, adminIds().includes(message.from.id)?'Панель RAID STORE. Вам доступны функции администратора.':'Добро пожаловать в RAID STORE! Здесь можно проверить статус оффера, оценить аккаунт или открыть магазин.', mainMenu(message.from.id));
   } else if ((message?.text === '/offers' || message?.text === '/sell') && appUrl) {
     await sendMessage(message.chat.id, message.text === '/sell' ? 'Загрузите скриншоты, оцените аккаунт и сформируйте оффер.' : 'Откройте витрину принятых офферов.', {
       inline_keyboard: [[{ text: message.text === '/sell' ? '➕ Создать оффер' : '🛒 Смотреть аккаунты', web_app: { url: `${appUrl}/#market` } }]]
