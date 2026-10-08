@@ -29,7 +29,8 @@ function estimate(f:FormState){
   const resources=f.gems*.55+f.energy*.02+f.silver*.00015+f.sacred*130+f.voidShards*45+f.legendaryBooks*70;
   const foundCombos=combos.filter(combo=>combo.ids.every(id=>f.champions.includes(id)));
   const comboValue=foundCombos.reduce((sum,combo)=>sum+combo.bonus,0)+f.champions.length*650;
-  const market=Math.max(2500,(roster+progress+resources+f.power*520)*.72+comboValue);
+  const mythicPremium=f.mythicals>=5?1.3:1;
+  const market=Math.max(2500,((roster+progress+resources+f.power*520)*.72+comboValue)*mythicPremium);
   const center=market*.12;
   return{low:center*.9,high:center*1.1,center,foundCombos,parts:[{label:'Коллекция героев',value:roster,color:'#d9fe66'},{label:'Прогресс аккаунта',value:progress,color:'#8e79ff'},{label:'Ключевые связки',value:comboValue,color:'#f2c94c'},{label:'Ресурсы и сила',value:resources+f.power*520,color:'#53d6c8'}]};
 }
