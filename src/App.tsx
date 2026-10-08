@@ -31,7 +31,8 @@ function estimate(f:FormState){
   const comboValue=foundCombos.reduce((sum,combo)=>sum+combo.bonus,0)+f.champions.length*650;
   const mythicPremium=f.mythicals>=5?1.3:1;
   const market=Math.max(2500,((roster+progress+resources+f.power*520)*.72+comboValue)*mythicPremium);
-  const center=market*.12;
+  const matchesEliteEndgameTier=f.level>=95&&f.power>=19&&f.mythicals>=7&&f.legendaries>=175&&f.voidLegendaries>=15&&f.sixStar>=160&&f.factionWars>=285&&f.greatHall>=180&&f.clanBoss==='ultra'&&f.hydra==='nightmare';
+  const center=Math.max(market*.12,matchesEliteEndgameTier?25000:0);
   return{low:center*.9,high:center*1.1,center,foundCombos,parts:[{label:'Коллекция героев',value:roster,color:'#d9fe66'},{label:'Прогресс аккаунта',value:progress,color:'#8e79ff'},{label:'Ключевые связки',value:comboValue,color:'#f2c94c'},{label:'Ресурсы и сила',value:resources+f.power*520,color:'#53d6c8'}]};
 }
 
