@@ -10,9 +10,25 @@ import { champions } from '../src/champions.js';
 import { telegramAuth } from './auth.js';
 import { getAuctions, getOffers, getOrders, getProducts, saveAuctions, saveOffers, saveOrders, saveProducts } from './store.js';
 import { answerCallback, answerPreCheckout, createStarsInvoice, sendMessage } from './telegram.js';
+import { formatLogs, logEvent, recentLogs } from './logs.js';
 
 const app = express(); const port = Number(process.env.PORT || 3001);
-app.use(cors()); app.use(express.json({ limit: '12mb' }));
+app.use(cors());
+app.use((req, res, next) => {
+  const started = Date.now();
+  res.locals.requestId = crypto.randomUUID();
+  res.setHeader('X-Request-Id', res.locals.requestId);
+  res.on('finish', () => {
+    const route = req.route?.path || '/api';
+    if (res.statusCode >= 400 || (req.method === 'POST' && ['/api/offers', '/api/analysis/screens'].includes(route)))
+      logEvent(res.statusCode >= 500 ? 'error' : res.statusCode >= 400 ? 'warn' : 'info', 'http_request', { route, method: req.method, status: res.statusCode, durationMs: Date.now() - started, requestId: res.locals.requestId });
+  });
+  next();
+});
+app.use(express.json({ limit: '12mb' }));
+// Only trusted Telegram deliveries may open the diagnostic section.
+const pollingLogSecret = crypto.randomBytes(32).toString('hex');
+const secretMatches = (actual: string, expected: string) => !!expected && Buffer.byteLength(actual) === Buffer.byteLength(expected) && crypto.timingSafeEqual(Buffer.from(actual), Buffer.from(expected));
 const publicAppUrl=()=>process.env.PUBLIC_APP_URL||(process.env.RAILWAY_PUBLIC_DOMAIN?`https://${process.env.RAILWAY_PUBLIC_DOMAIN}`:undefined);
 const defaultAdminIds=[609701835,742770606,8097928728,8317559848,990913831];
 const adminIds=()=>Array.from(new Set([...defaultAdminIds,...String(process.env.ADMIN_TELEGRAM_IDS||'').split(',').map(x=>Number(x.trim())).filter(Number.isFinite)]));
@@ -70,6 +86,10 @@ app.post('/api/offers',telegramAuth,async(req,res)=>{
   res.status(replaced?200:201).json(item)
 });
 app.get('/api/admin/session',telegramAuth,(req,res)=>res.json({isAdmin:adminIds().includes(req.telegramUser!.id)}));
+app.get('/api/admin/logs', telegramAuth, requireAdmin, async (req, res) => {
+  res.setHeader('Cache-Control', 'private, no-store');
+  res.json(await recentLogs(req.query.errors === 'true', 50));
+});
 app.get('/api/admin/offers/pending',telegramAuth,requireAdmin,async(_req,res)=>res.json((await getOffers()).filter(x=>x.status==='pending').reverse()));
 app.get('/api/admin/offer-screens-index',telegramAuth,requireAdmin,async(_req,res)=>res.json((await getOffers()).filter(x=>x.images.length>0).map(x=>({id:x.id,title:x.title,count:x.images.length,status:x.status})).reverse()));
 app.get('/api/admin/offers/:id/screens',telegramAuth,requireAdmin,async(req,res)=>{const item=(await getOffers()).find(x=>x.id===req.params.id);if(!item)return res.status(404).json({error:'Оффер не найден'});res.setHeader('Cache-Control','private, no-store');res.json({title:item.title,images:item.images})});
@@ -98,8 +118,23 @@ app.post('/api/telegram/webhook', async (req,res) => {
   const mainMenu=(userId:number)=>({inline_keyboard:[
     [{text:'📋 Мои офферы',callback_data:'menu:my_offers'},{text:'🛒 Магазин',web_app:{url:`${appUrl}/#market`}}],
     [{text:'➕ Создать оффер',web_app:{url:`${appUrl}/#estimate`}}],
-    ...(adminIds().includes(userId)?[[{text:'🛡 Рассмотрение',callback_data:'admin:offers'},{text:'📦 Заказы',callback_data:'admin:orders'}],[{text:'🗑 Управление аккаунтами',callback_data:'admin:accounts'}]]:[])
+    ...(adminIds().includes(userId)?[[{text:'🛡 Рассмотрение',callback_data:'admin:offers'},{text:'📦 Заказы',callback_data:'admin:orders'}],[{text:'🗑 Управление аккаунтами',callback_data:'admin:accounts'},{text:'📋 Логи',callback_data:'admin:logs'}]]:[])
   ]});
+  const logCommand = /^\/logs(?:@rsl_value_bot)?(?:\s|$)/i.test(message?.text || '');
+  const logCallback = /^admin:logs(?::errors)?$/.test(String(callback?.data || ''));
+  if (logCommand || logCallback) {
+    const trusted = secretMatches(String(req.header('X-RSL-Polling-Secret') || ''), pollingLogSecret)
+      || secretMatches(String(req.header('X-Telegram-Bot-Api-Secret-Token') || ''), process.env.TELEGRAM_WEBHOOK_SECRET || '');
+    const userId = logCallback ? callback.from.id : message.from?.id;
+    const chatId = logCallback ? callback.message?.chat.id : message.chat?.id;
+    if (!trusted || !adminIds().includes(userId) || chatId !== userId) return res.status(403).json({ error: 'Доступ к логам только администраторам в личном чате' });
+    if (logCallback) await answerCallback(callback.id).catch(() => undefined);
+    await sendMessage(userId, await formatLogs(callback?.data === 'admin:logs:errors'), { inline_keyboard: [
+      [{ text: '🔄 Все события', callback_data: 'admin:logs' }, { text: '⚠️ Только ошибки', callback_data: 'admin:logs:errors' }],
+      [{ text: '← Главное меню', callback_data: 'menu:home' }]
+    ] });
+    return res.json({ ok: true });
+  }
   if (message?.text && /^\/(?:start|menu)(?:@rsl_value_bot)?(?:\s|$)/i.test(message.text) && appUrl) {
     const startPayload=message.text.match(/^\/start(?:@rsl_value_bot)?\s+([^\s]+)$/i)?.[1];
     const linkedOffer=startPayload?.startsWith('offer_')?(await getOffers()).find(item=>item.id===startPayload):undefined;
@@ -206,6 +241,12 @@ app.post('/api/telegram/webhook', async (req,res) => {
 
 app.get('/api/admin/orders', async (req,res) => { if(req.header('authorization')!==`Bearer ${process.env.ADMIN_TOKEN}`) return res.status(401).json({error:'Unauthorized'}); res.json((await getOrders()).reverse()); });
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..'); app.use(express.static(path.join(root,'dist','web'))); app.get('/{*path}',(req,res,next)=>req.path.startsWith('/api/')?next():res.sendFile(path.join(root,'dist','web','index.html')));
+app.use(((error, _req, res, _next) => {
+  const status = error?.type === 'entity.too.large' ? 413 : error?.type === 'entity.parse.failed' ? 400 : 500;
+  logEvent('error', 'request_failed', { status, requestId: String(res.locals.requestId || ''), reason: status === 413 ? 'payload_too_large' : status === 400 ? 'invalid_json' : 'internal_error' });
+  if (!res.headersSent) res.status(status).json({ error: status === 413 ? 'Скриншоты весят слишком много.' : status === 400 ? 'Некорректный запрос.' : 'Ошибка сервера. Администратор может проверить логи.', requestId: res.locals.requestId });
+  else _next(error);
+}) as express.ErrorRequestHandler);
 
 async function startTelegramPolling(){
   const token=process.env.RSL_VALUE_BOT_TOKEN||process.env.BOT_TOKEN;if(!token||process.env.TELEGRAM_POLLING!=='true')return;
@@ -216,16 +257,16 @@ async function startTelegramPolling(){
       const response=await fetch(`${base}/getUpdates`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({offset,timeout:25,allowed_updates:['message','callback_query','pre_checkout_query']})});
       const data=await response.json() as {ok:boolean;result?:Array<{update_id:number}>;description?:string};
       if(!data.ok)throw new Error(data.description||'getUpdates failed');
-      if(!connected){connected=true;console.log('Telegram polling connected')}
+      if(!connected){connected=true;logEvent('info', 'telegram_polling_connected')}
       for(const update of data.result||[]){
         console.log(`Telegram update received: ${update.update_id}`);
-        const delivered=await fetch(`http://127.0.0.1:${port}/api/telegram/webhook`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(update)});
+        const delivered=await fetch(`http://127.0.0.1:${port}/api/telegram/webhook`,{method:'POST',headers:{'content-type':'application/json','X-RSL-Polling-Secret':pollingLogSecret},body:JSON.stringify(update)});
         if(!delivered.ok)throw new Error(`Local update handler returned ${delivered.status}`);
         console.log(`Telegram update handled: ${update.update_id}`);
         offset=update.update_id+1;
       }
-    }catch(error){connected=false;console.error('Telegram polling error',error);await new Promise(resolve=>setTimeout(resolve,3000));}
+    }catch(error){connected=false;logEvent('error', 'telegram_polling_failed', { reason: 'telegram_or_update_handler_failed' });await new Promise(resolve=>setTimeout(resolve,3000));}
   }
 }
 
-app.listen(port,()=>{console.log(`RAID STORE API: http://localhost:${port}`);void cleanupOfferDuplicates().catch(error=>console.error('Offer deduplication failed',error));void startTelegramPolling()});
+app.listen(port,()=>{logEvent('info', 'server_started');void cleanupOfferDuplicates().catch(error=>console.error('Offer deduplication failed',error));void startTelegramPolling()});

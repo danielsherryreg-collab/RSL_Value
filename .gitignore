@@ -4,5 +4,7 @@ dist/
 data/orders.json
 data/offers.json
 data/auctions.json
+data/diagnostics.json
+data/diagnostics.json.tmp
 *.log
 .DS_Store
