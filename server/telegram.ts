@@ -1,13 +1,19 @@
+import { logEvent } from './logs.js';
 const apiBase = (token: string) => `https://api.telegram.org/bot${token}`;
 const botToken = () => process.env.RSL_VALUE_BOT_TOKEN || process.env.BOT_TOKEN;
 
 async function callTelegram<T>(method: string, body: Record<string, unknown>): Promise<T> {
+  try {
   const token = botToken();
-  if (!token) throw new Error('BOT_TOKEN is not configured');
+  if (!token) { logEvent('error', 'telegram_api_failed', { operation: method, reason: 'missing_bot_token' }); throw new Error('BOT_TOKEN is not configured'); }
   const response = await fetch(`${apiBase(token)}/${method}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
   const result = await response.json() as { ok: boolean; result: T; description?: string };
-  if (!result.ok) throw new Error(result.description || 'Telegram API error');
+  if (!result.ok) { logEvent('error', 'telegram_api_rejected', { operation: method, status: response.status }); throw new Error(result.description || 'Telegram API error'); }
   return result.result;
+  } catch (error) {
+    logEvent('error', 'telegram_api_failed', { operation: method, reason: 'telegram_request_failed' });
+    throw error;
+  }
 }
 
 export const createStarsInvoice = (orderId: string, title: string, description: string, amount: number) => callTelegram<string>('createInvoiceLink', {
