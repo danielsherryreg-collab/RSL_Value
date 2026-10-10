@@ -72,6 +72,7 @@ export interface StoreOffer {
   acceptedByTelegramUserId?: number;
   acceptedByUsername?: string;
   moderationFlags?: string[];
+  reviewedAt?: string;
   proposedPriceRub?: number;
   priceProposalStatus?: 'pending' | 'accepted' | 'rejected';
   priceProposedAt?: string;
