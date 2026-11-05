@@ -1,3 +1,4 @@
+import { auditStorage } from './storage-audit.js';
 import 'dotenv/config';
 import crypto from 'node:crypto';
 import express from 'express';
@@ -274,6 +275,6 @@ const cleanupTimer = setInterval(() => {
   void cleanupProcessedData().catch(error => console.error('Processed data cleanup failed', error));
 }, 5 * 60 * 1000);
 cleanupTimer.unref();
-void cleanupProcessedData().catch(error => console.error('Processed data cleanup failed', error));
+void cleanupProcessedData().then(() => auditStorage()).catch(error => console.error('Storage audit or cleanup failed', error));
 
 app.listen(port,()=>{logEvent('info', 'server_started');void cleanupOfferDuplicates().catch(error=>console.error('Offer deduplication failed',error));void startTelegramPolling()});
