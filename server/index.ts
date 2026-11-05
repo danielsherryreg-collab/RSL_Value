@@ -8,7 +8,7 @@ import { z } from 'zod';
 import type { AuctionListing, Order, StoreOffer } from '../shared/types.js';
 import { champions } from '../src/champions.js';
 import { telegramAuth } from './auth.js';
-import { getAuctions, getOffers, getOrders, getProducts, saveAuctions, saveOffers, saveOrders, saveProducts } from './store.js';
+import { cleanupProcessedData, getAuctions, getOffers, getOrders, getProducts, saveAuctions, saveOffers, saveOrders, saveProducts } from './store.js';
 import { answerCallback, answerPreCheckout, createStarsInvoice, sendMessage } from './telegram.js';
 import { formatLogs, logEvent, recentLogs } from './logs.js';
 
@@ -165,7 +165,7 @@ app.post('/api/telegram/webhook', async (req,res) => {
     const adminId=message.from.id;const offerId=pendingAdminPriceInputs.get(adminId)!;
     if(!adminIds().includes(adminId)){pendingAdminPriceInputs.delete(adminId);await sendMessage(message.chat.id,'Доступ только для администратора.');}
     else if(/^отмена$/i.test(message.text.trim())){pendingAdminPriceInputs.delete(adminId);await sendMessage(message.chat.id,'Ввод цены отменён.',{inline_keyboard:[[{text:'← К офферам',callback_data:'admin:offers'}]]});}
-    else{const amount=Number(message.text.replace(/[^\d]/g,''));if(!Number.isInteger(amount)||amount<1000||amount>10_000_000)await sendMessage(message.chat.id,'Введите сумму от 1 000 до 10 000 000 ₽ только цифрами или напишите «Отмена».');else{const items=await getOffers();const item=items.find(x=>x.id===offerId);if(!item||item.status!=='pending'){pendingAdminPriceInputs.delete(adminId);await sendMessage(message.chat.id,'Оффер не найден или уже обработан.');}else{item.proposedPriceRub=amount;item.priceProposalStatus='pending';item.priceProposedAt=new Date().toISOString();item.priceProposedByTelegramUserId=adminId;item.priceProposedByUsername=message.from.username;await saveOffers(items);pendingAdminPriceInputs.delete(adminId);await sendMessage(item.sellerTelegramUserId,`Администратор предлагает новую стоимость за аккаунт:\n\n${item.title}\n\nВаша цена: ${item.offerPriceRub.toLocaleString('ru-RU')} ₽\nПредложение администратора: ${amount.toLocaleString('ru-RU')} ₽`,{inline_keyboard:[[{text:'✅ Принять цену',callback_data:`seller:accept_price:${item.id}`}],[{text:'❌ Отказаться',callback_data:`seller:reject_price:${item.id}`}]]});await sendMessage(message.chat.id,`Предложение ${amount.toLocaleString('ru-RU')} ₽ отправлено продавцу.`,{inline_keyboard:[[{text:offerReviewLabel(item),callback_data:`admin:view_offer:${item.id}`}],[{text:'← К офферам',callback_data:'admin:offers'}]]});}}}
+    else{const amount=Number(message.text.replace(/[^\d]/g,''));if(!Number.isInteger(amount)||amount<1000||amount>10_000_000)await sendMessage(message.chat.id,'Введите сумму от 1 000 до 10 000 000 ₽ только цифрами или напишите «Отмена».');else{const items=await getOffers();const item=items.find(x=>x.id===offerId);if(!item||item.status!=='pending'){pendingAdminPriceInputs.delete(adminId);await sendMessage(message.chat.id,'Оффер не найден или уже обработан.');}else{item.proposedPriceRub=amount;item.priceProposalStatus='pending';delete item.retentionStartedAt;item.priceProposedAt=new Date().toISOString();item.priceProposedByTelegramUserId=adminId;item.priceProposedByUsername=message.from.username;await saveOffers(items);pendingAdminPriceInputs.delete(adminId);await sendMessage(item.sellerTelegramUserId,`Администратор предлагает новую стоимость за аккаунт:\n\n${item.title}\n\nВаша цена: ${item.offerPriceRub.toLocaleString('ru-RU')} ₽\nПредложение администратора: ${amount.toLocaleString('ru-RU')} ₽`,{inline_keyboard:[[{text:'✅ Принять цену',callback_data:`seller:accept_price:${item.id}`}],[{text:'❌ Отказаться',callback_data:`seller:reject_price:${item.id}`}]]});await sendMessage(message.chat.id,`Предложение ${amount.toLocaleString('ru-RU')} ₽ отправлено продавцу.`,{inline_keyboard:[[{text:offerReviewLabel(item),callback_data:`admin:view_offer:${item.id}`}],[{text:'← К офферам',callback_data:'admin:offers'}]]});}}}
   }
   if(callback&&appUrl){
     const userId=callback.from.id;const chatId=callback.message?.chat.id||userId;const data=String(callback.data||'');const isAdmin=adminIds().includes(userId);
@@ -269,5 +269,11 @@ async function startTelegramPolling(){
     }catch(error){connected=false;logEvent('error', 'telegram_polling_failed', { reason: 'telegram_or_update_handler_failed' });await new Promise(resolve=>setTimeout(resolve,3000));}
   }
 }
+
+const cleanupTimer = setInterval(() => {
+  void cleanupProcessedData().catch(error => console.error('Processed data cleanup failed', error));
+}, 5 * 60 * 1000);
+cleanupTimer.unref();
+void cleanupProcessedData().catch(error => console.error('Processed data cleanup failed', error));
 
 app.listen(port,()=>{logEvent('info', 'server_started');void cleanupOfferDuplicates().catch(error=>console.error('Offer deduplication failed',error));void startTelegramPolling()});

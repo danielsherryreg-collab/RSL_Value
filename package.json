@@ -10,6 +10,7 @@
     "build": "tsc -b && vite build",
     "start": "tsx server/index.ts",
     "check": "tsc -b --pretty false",
+    "test": "tsx --test server/retention.test.ts",
     "bot:set-menu": "tsx scripts/set-bot-menu.ts"
   },
   "dependencies": {

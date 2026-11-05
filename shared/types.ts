@@ -38,6 +38,7 @@ export interface AuctionBid {
 }
 
 export interface AuctionListing {
+  retentionStartedAt?: string;
   id: string;
   sellerTelegramUserId: number;
   sellerUsername?: string;
@@ -54,6 +55,7 @@ export interface AuctionListing {
 }
 
 export interface StoreOffer {
+  retentionStartedAt?: string;
   id: string;
   sellerTelegramUserId: number;
   sellerUsername?: string;
